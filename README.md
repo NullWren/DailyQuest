@@ -1,64 +1,27 @@
+<p align="center"><img src="docs/assets/wrenfeed-icon.png" width="100" alt="WrenFeed bird-feeder icon"></p>
+
 # WrenFeed
 
-A small, offline Windows quest log for daily and weekly games. The checklist needs no login, internet connection, server, browser, package manager, or subscription. An optional, explicit leaderboard upload can share a chosen nickname and completion totals when its receiver is enabled.
+**Small quests. Good company.** WrenFeed is a compact Windows quest log for the little things worth doing in your games each day or week. Your checklist and history stay on your computer. No account, internet connection, installer, or subscription is needed to use it.
 
-## Download and start
+## Get started
 
-1. Download the ready-to-run [WrenFeed.zip](release/WrenFeed.zip). On GitHub, open that file and choose **Download raw file**. The repository's **Code → Download ZIP** contains source code; use the linked WrenFeed ZIP for the app.
-2. Right-click the downloaded ZIP and choose **Extract All**. Open the extracted `WrenFeed` folder.
-3. Double-click `WrenFeed.exe`. You can keep the extracted folder wherever you like. If Windows shows an unsigned-app warning, choose **More info → Run anyway** if you trust this download.
-4. For a desktop shortcut, right-click `WrenFeed.exe` in that folder and choose **Show more options → Send to → Desktop (create shortcut)**. Keep the extracted folder in place so the shortcut continues to work.
+1. Download [WrenFeed.zip](release/WrenFeed.zip). On GitHub, open the file and choose **Download raw file**. The repository's **Code → Download ZIP** is the source code, not the ready-to-run app.
+2. Right-click the downloaded ZIP and choose **Extract All**. Open the extracted `WrenFeed` folder and double-click **WrenFeed.exe**.
+3. Click **+ Game** to make your first quest. For a desktop shortcut, right-click the EXE and choose **Show more options → Send to → Desktop (create shortcut)**. Keep the extracted folder in place.
 
-The ZIP also contains an `import` template and eight optional themes. The app stores your list and history separately in your local app-data folder, so replacing the extracted app folder with a new version will keep your progress. Close WrenFeed before replacing its files.
+Windows may show an unsigned-app warning on first launch. If you trust this download, choose **More info → Run anyway**.
 
-## Using it
+## At a glance
 
-- **+ Game** adds a quest, a short description, and any number of extra lines. Enable **Checkbox** on a line to make it an individual task; leave it off for a plain note. Blank lines are ignored when saving.
-- Set the optional **Game group** while editing to show related quests in one panel. For example, set both Tears of Guthix and Kingdom check-in to **OSRS**. The group heading has no checkbox; each quest keeps its own completion, reset rule, and history. Existing entries are ungrouped until you edit them. Use **+ Quest** in a group to add another quest there.
-- Check a quest to complete all its tasks. Completing every checkable task automatically completes the quest. Unchecking the quest clears its tasks; unchecking one task reopens the quest.
-- The **···** menu edits, reorders, or archives a quest. Archiving keeps its history. Restore archived quests in Settings.
-- **History** shows a read-only snapshot for a date. Past game names, descriptions, task text, and results stay intact when you change today's list. Today is updated as you edit it.
-- **Weekly** has its own game list and recent completion history. Each weekly game can reset on a fixed UTC weekday and time, or at **00:00 UTC on the seventh day after its last completion**. The second option suits Tears of Guthix: a completion on Sunday UTC becomes available the following Sunday at 00:00 UTC. The tab shows the next reset in your local time after completion.
-- Daily quests can reset at **local midnight** (the default), at a chosen **UTC time**, or a chosen **number of hours after completion** (24 hours by default). This allows game tasks with server-wide resets or rolling timers to share a group. For Forma, choose 23 hours and complete the quest when you start the next build. The window detects resets while open. If the app is closed, the next launch creates the current cycle. Unopened cycles have no recorded result and are never assumed complete.
-- Settings includes **always on top**, a **20–100% visibility slider**, completion animations, optional themes, and backup export/restore. Choose **Fade everything** for whole-window opacity or **Fade backgrounds only** to keep quest text clear over your game. The second mode gives text a contrast halo over games and reduces the extra tint on quest cards. Small buttons stay solid so they remain easy to use. Settings and other modal dialogs cannot be minimized while they block the quest log. Backups include daily and weekly games and their history. Restoring a backup replaces the journal, after confirmation, and preserves a separate copy of the journal being replaced.
-- **Settings → Import quests** adds daily and weekly quests from one JSON file. Start with [the template and its README](import/README.md), which cover every field in the quest editor, or use the [copy-paste AI chat prompt](import/AI-PROMPT.md) to turn a plain-English list into valid JSON. Review additions and skipped duplicates before saving. Importing quests leaves existing progress and history intact; restoring a backup remains the full-journal replacement option.
-- **Settings → Appearance** keeps the original design as Default. Choose **Install theme file…** to add an optional local theme, then select it in the list. [Eight themes, previews, and a custom-theme template](themes/README.md) are supplied in the repo and shareable ZIP. Theme files are stored separately from the journal and never execute code or use the network.
-- **Settings → Leaderboard upload…** shows an all-time tally of completed daily and weekly quest cycles by game. Enter a nickname and your private invite code, review the game labels and counts, and press **Upload totals** to share only that tally. Ungrouped quests use their quest names as game labels. The public [WrenFeed leaderboard](https://nullwren.github.io/WrenFeed/) stays on GitHub Pages. Uploads require the separate [receiver](leaderboard/README.md) to be deployed first; until then the app explains that the service is not open. Your journal remains local, and WrenFeed makes no network request unless you press Upload.
-- Drag the WrenFeed title bar to move the window, drag its edges or corners to resize, or use the title-bar minimize and close buttons. Closing exits the app; it does not keep running in the tray. Window size is remembered.
-- Keyboard: **Ctrl+N** adds a game, **Ctrl+H** toggles History, **Ctrl+,** opens Settings, **Esc** closes a dialog.
+- Keep **daily and weekly quests**, each with its own reset rule, short description, and optional checkable subtasks. Group related quests under one game without tying their timers together.
+- See past completions in **History**. Archive old quests without erasing their records.
+- Keep the log visible over a game with **always on top** and adjustable visibility. Try eight optional [themes](themes/README.md), or stay with the original look.
+- Add many quests at once with the [import template](import/README.md) or its [AI chat prompt](import/AI-PROMPT.md).
+- Optionally share reviewed daily and weekly totals by game with the [WrenFeed standings](https://nullwren.github.io/WrenFeed/standings.html) when the leaderboard opens. Uploads happen only when you press **Upload totals**.
 
-## Local files
+Your progress lives separately in `%LOCALAPPDATA%\DailyQuest\journal.json`, so replacing the extracted app folder for an update keeps your list. Close WrenFeed before replacing its files. Use **Settings → Export backup** for a separate copy.
 
-Portable executable: `WrenFeed.exe` in the folder extracted from the ZIP.
+## More when you need it
 
-If you run the developer `install.ps1` script, it installs to `%LOCALAPPDATA%\Programs\WrenFeed\WrenFeed.exe` and creates a desktop shortcut.
-
-Data: `%LOCALAPPDATA%\DailyQuest\journal.json` (kept at the original path so existing progress carries into WrenFeed)
-
-The app writes after each change using an atomic replacement and retains the previous save as `journal.backup.json`. A file lock prevents two instances from writing the same journal. A syntactically unreadable journal can be recovered from the backup, preserving the unreadable original. Unknown schema versions and structurally invalid data are refused without silently resetting your journal. Use **Export backup** for additional copies; the automatic backup is only one save behind, not a long-term backup archive.
-
-The journal path is separate from both the portable ZIP folder and the source repository. The app makes no network calls during normal checklist use. Only an explicit leaderboard upload fetches the service address and sends the reviewed public tally and private invite code. Exported backups can be placed wherever you choose, including a synced folder if desired. The invite code is encrypted separately for the current Windows account and is not included in journal backups.
-
-## Development
-
-- `src/Model.cs`: plain data types, checklist rules, dated snapshots, per-quest schedules, and storage. Stable quest/line IDs and UTC completion timestamps support future streak calculations. Local daily day keys remain local calendar dates; UTC and rolling daily cycles, as well as weekly cycles, have independent records. Journals from versions 1–3 migrate to version 4 on load.
-- `src/App.cs`: WPF windows and interactions. No third-party runtime packages.
-- `src/QuestImport.cs`: strict, versioned quest-file parsing, validation, and duplicate planning. `import/` has the template and its format guide.
-- `src/Theme.xaml`: the original default appearance and reusable control styles. `src/Themes.cs` validates and applies optional declarative theme files; `themes/` has eight presets, previews, a template, and its own README. The small theme mascots are built-in vector drawings, not external downloads.
-- `src/Leaderboard.cs`: all-time completion tally, encrypted local invite storage, and opt-in upload. `leaderboard/` contains the optional Cloudflare receiver and its setup guide; `docs/` contains the GitHub Pages site.
-- `src/app-icon.png` is the transparent cyber-wren and bird-feeder artwork for the shortcut icon. `src/app.ico` contains Windows icon sizes and is embedded in the executable.
-- `tests/ModelTests.cs`: isolated model/storage tests; generates a separate UI fixture with example games.
-
-Build with `powershell -ExecutionPolicy Bypass -File .\build.ps1` from this directory. It uses the .NET Framework compiler already included with this Windows installation. Run model/storage tests with `test.ps1`, quest-import tests with `test-import.ps1`, in-process WPF editor tests with `test-editor.ps1`, theme/settings tests with `test-themes.ps1`, and leaderboard tally tests with `test-leaderboard.ps1`. Run `node --test leaderboard/worker/test.mjs` for the separate receiver. Building and using the desktop app need no downloads.
-
-Run `install.ps1` to copy the executable into the per-user Programs folder and create the desktop shortcut. No administrator privileges are required. Close WrenFeed before updating it. The source and build output remain in this project folder.
-
-The current shareable Windows package is in `release/WrenFeed.zip`. It contains the app, a double-click launcher, a friend-friendly README, the quest-import template and guide, and optional theme files with their own guide. Rebuild it with `package.ps1` after source changes.
-
-GitHub Actions runs the Windows build and all four test suites on pushes and pull requests, then saves a fresh ZIP as a downloadable workflow artifact. It does not sign or publish a release automatically.
-
-For isolated testing: `WrenFeed.exe --data-dir "C:\path\to\test-folder"`. The desktop shortcut uses the normal local data folder and starts with no sample games.
-
-## Future additions
-
-Streak displays, notifications, automated leaderboard scoring, and syncing are not implemented. History is recorded at game and optional subtask level, with stable IDs and a versioned JSON schema, so these features have room to grow. Editing historical completions is unavailable.
+[Using WrenFeed](guides/USING-WRENFEED.md) · [Files, backups, and development](guides/FILES-AND-DEVELOPMENT.md) · [Theme gallery](themes/README.md) · [Quest import guide](import/README.md) · [Public leaderboard site](https://nullwren.github.io/WrenFeed/)

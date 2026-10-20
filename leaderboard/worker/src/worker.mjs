@@ -1,4 +1,3 @@
-const SITE_ORIGIN = 'https://nullwren.github.io';
 const COLORS = ['#b5d6bd', '#e2bc8b', '#c7b7db', '#9fc7d5', '#e5b29f', '#bddba4'];
 
 function json(value, status = 200, publicRead = false) {
@@ -7,7 +6,7 @@ function json(value, status = 200, publicRead = false) {
     headers: {
       'content-type': 'application/json; charset=utf-8',
       'cache-control': publicRead ? 'public, max-age=30' : 'no-store',
-      ...(publicRead ? {'access-control-allow-origin': SITE_ORIGIN, 'vary': 'Origin'} : {})
+      ...(publicRead ? {'access-control-allow-origin': '*'} : {})
     }
   });
 }

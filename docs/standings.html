@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111821">
+  <meta name="description" content="WrenFeed standings: daily and weekly game quests completed by the flock.">
+  <title>The Standings · WrenFeed</title>
+  <link rel="icon" href="assets/wrenfeed-icon.png" type="image/png">
+  <link rel="stylesheet" href="assets/style.css">
+  <script src="assets/app.js" defer></script>
+</head>
+<body>
+  <div class="sky-glow" aria-hidden="true"></div>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="WrenFeed leaderboard home">
+        <span class="brand-mark">✦</span><span>WREN<span class="brand-accent">FEED</span></span>
+      </a>
+      <nav aria-label="Main navigation">
+        <a class="nav-tab" href="./">Home</a>
+        <a class="nav-tab active" href="standings.html" aria-current="page">Standings</a>
+        <a class="nav-link" href="https://github.com/NullWren/WrenFeed">Get WrenFeed <span aria-hidden="true">↗</span></a>
+      </nav>
+    </header>
+
+    <main class="standings-main">
+      <section class="board-section" aria-labelledby="board-title">
+        <div class="section-topline"><span>THE GUILD LEDGER</span><span class="section-topline-end">✦ &nbsp; ✦ &nbsp; ✦</span></div>
+        <div class="section-heading">
+          <h1 id="board-title">The standings<span class="heading-dot">.</span></h1>
+          <p class="section-intro">A tally of completed quests, grouped by game. Dailies and weeklies each count as one completion.</p>
+        </div>
+
+        <section class="preview-notice" id="preview-notice" role="status" hidden>
+          <span class="notice-icon" aria-hidden="true">✧</span>
+          <div><strong>Preview standings</strong><p>These are fictional examples to show how the leaderboard will look. No one’s WrenFeed data has been uploaded.</p></div>
+        </section>
+
+        <div class="board-toolbar">
+          <div class="filter-wrap"><label for="game-filter">VIEW GAME</label><select id="game-filter" aria-label="Filter standings by game"><option value="all">All games</option></select></div>
+          <div class="board-status"><span class="status-light" aria-hidden="true"></span><span id="board-status-text">Loading standings…</span></div>
+        </div>
+
+        <div class="summary-grid" aria-label="Leaderboard totals">
+          <div class="stat-card"><span class="stat-label">QUESTS COMPLETED</span><strong id="total-quests">—</strong><span class="stat-foot">all dailies + weeklies</span></div>
+          <div class="stat-card"><span class="stat-label">DAILY CHECK-INS</span><strong id="total-daily">—</strong><span class="stat-foot">the little things add up</span></div>
+          <div class="stat-card"><span class="stat-label">WEEKLY QUESTS</span><strong id="total-weekly">—</strong><span class="stat-foot">big plans, steady progress</span></div>
+        </div>
+
+        <div class="leaderboard-frame">
+          <div class="frame-header"><span>RANK &nbsp; / &nbsp; ADVENTURER</span><span>COMPLETIONS</span></div>
+          <ol class="leaderboard" id="leaderboard" aria-label="Player rankings"></ol>
+          <div class="empty-state" id="empty-state" hidden><span aria-hidden="true">✦</span><h2>The perch is quiet for now.</h2><p>No scores have been shared yet. The first adventurer will have the whole board to explore.</p></div>
+        </div>
+        <p class="board-footnote">Counts represent completed quest cycles, not points. WrenFeed shares a tally only when its owner chooses to upload it.</p>
+      </section>
+    </main>
+    <footer><span>✦ WRENFEED</span><span>Small quests. Good company.</span><a href="https://github.com/NullWren/WrenFeed">GitHub ↗</a></footer>
+  </div>
+</body>
+</html>

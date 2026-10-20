@@ -1,8 +1,8 @@
 # WrenFeed leaderboard site
 
-This folder is the [WrenFeed leaderboard site](https://nullwren.github.io/WrenFeed/) served by GitHub Pages from `main` → `/docs`. It is separate from the desktop app and its local journal.
+This folder is the [WrenFeed site](https://nullwren.github.io/WrenFeed/) served by GitHub Pages from `main` → `/docs`. The home page introduces the app; [Standings](https://nullwren.github.io/WrenFeed/standings.html) has the game filter and leaderboard. The **See the standings** button opens that separate page. The site is separate from the desktop app and its local journal.
 
-The page reads `data/service.json` first. With its `endpoint` set to `null`, the site reads `data/leaderboard.json`. Once the optional [leaderboard receiver](../leaderboard/README.md) is deployed and its URL is added to `service.json`, the site reads live scores from that receiver. While either source has no players, it shows clearly labeled fictional players from `data/demo.json`. As soon as a real player appears, the demo file is ignored entirely. A filtered game with no completions shows an empty state.
+The standings page reads `data/service.json` first. With its `endpoint` set to `null`, it reads `data/leaderboard.json`. Once the optional [leaderboard receiver](../leaderboard/README.md) is deployed and its URL is added to `service.json`, it reads live scores from that receiver. While either source has no players, it shows clearly labeled fictional players from `data/demo.json`. As soon as a real player appears, the demo file is ignored entirely. A filtered game with no completions shows an empty state.
 
 ## Standings data
 
@@ -31,4 +31,4 @@ GitHub Pages is static and cannot receive submissions itself. The optional recei
 
 ## Local preview
 
-From the repository root, run `python -m http.server 8765 --directory docs`, then visit `http://localhost:8765/`. Opening `index.html` directly from disk will block the JSON fetch in most browsers.
+From the repository root, run `python -m http.server 8765 --directory docs`, then visit `http://localhost:8765/` and use **See the standings**. Opening `standings.html` directly from disk will block the JSON fetch in most browsers.

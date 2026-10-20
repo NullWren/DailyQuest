@@ -32,7 +32,7 @@ test('receiver accepts one private code and exposes only public counts', async (
   assert.equal((await post(payload)).status, 429);
   const response = await worker.fetch(new Request('https://example.workers.dev/leaderboard'), env);
   const body = await response.text();
-  assert.equal(response.headers.get('access-control-allow-origin'), 'https://nullwren.github.io');
+  assert.equal(response.headers.get('access-control-allow-origin'), '*');
   assert.ok(!body.includes(code));
   assert.deepEqual(JSON.parse(body).players[0].games, payload.games);
 });
