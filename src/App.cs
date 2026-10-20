@@ -89,7 +89,8 @@ namespace DailyQuest
             dialog.SetResourceReference(FrameworkElement.StyleProperty, typeof(Window));
             dialog.Owner = owner; dialog.Title = title; dialog.Width = width; dialog.Height = Math.Min(height, SystemParameters.WorkArea.Height - 50);
             dialog.MinWidth = Math.Min(width, 380); dialog.MinHeight = 350; dialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            dialog.ShowInTaskbar = false;
+            dialog.ShowInTaskbar = false; dialog.ResizeMode = ResizeMode.NoResize;
+            dialog.StateChanged += delegate { if (dialog.WindowState == WindowState.Minimized) dialog.WindowState = WindowState.Normal; };
             dialog.PreviewKeyDown += delegate(object s, KeyEventArgs e) { if (e.Key == Key.Escape) dialog.Close(); };
         }
     }
@@ -233,7 +234,7 @@ namespace DailyQuest
         SolidColorBrush Surface(string key)
         {
             var brush = new SolidColorBrush(ThemeManager.Current.Colors[key]);
-            if (journal.Settings.BackgroundOnlyOpacity) brush.Opacity = journal.Settings.WindowOpacity;
+            if (journal.Settings.BackgroundOnlyOpacity) brush.Opacity = key == "Panel" ? Math.Pow(journal.Settings.WindowOpacity, 8) : journal.Settings.WindowOpacity;
             return brush;
         }
         Border QuestCard(UIElement content)
@@ -514,8 +515,8 @@ namespace DailyQuest
             animate.Click += delegate { if (!Change(delegate { journal.Settings.Animate = animate.IsChecked == true; }, null)) animate.IsChecked = journal.Settings.Animate; };
             stack.Children.Add(pin); stack.Children.Add(animate);
             stack.Children.Add(UI.Label("WINDOW VISIBILITY"));
-            var wholeWindow = new RadioButton { Content = "Fade everything", GroupName = "OpacityMode", IsChecked = !journal.Settings.BackgroundOnlyOpacity, Margin = new Thickness(0, 0, 0, 5) };
-            var backgroundOnly = new RadioButton { Content = "Fade backgrounds only · keep text clear", GroupName = "OpacityMode", IsChecked = journal.Settings.BackgroundOnlyOpacity, Margin = new Thickness(0, 0, 0, 7) };
+            var wholeWindow = new RadioButton { Content = "Fade everything", GroupName = "OpacityMode", IsChecked = !journal.Settings.BackgroundOnlyOpacity, Foreground = UI.Brush("Ink"), Margin = new Thickness(0, 0, 0, 5) };
+            var backgroundOnly = new RadioButton { Content = "Fade backgrounds only · keep text clear", GroupName = "OpacityMode", IsChecked = journal.Settings.BackgroundOnlyOpacity, Foreground = UI.Brush("Ink"), Margin = new Thickness(0, 0, 0, 7) };
             AutomationProperties.SetName(wholeWindow, "Fade whole window"); AutomationProperties.SetName(backgroundOnly, "Fade backgrounds only");
             stack.Children.Add(wholeWindow); stack.Children.Add(backgroundOnly);
             bool resettingMode = false;
@@ -528,9 +529,9 @@ namespace DailyQuest
             wholeWindow.Checked += delegate { chooseMode(false); };
             backgroundOnly.Checked += delegate { chooseMode(true); };
             var opacityLabel = UI.Text("Window visibility · " + Math.Round(journal.Settings.WindowOpacity * 100) + "%", 12, "Muted"); stack.Children.Add(opacityLabel);
-            var opacitySlider = new Slider { Minimum = 60, Maximum = 100, Value = Math.Round(journal.Settings.WindowOpacity * 100), TickFrequency = 5, IsSnapToTickEnabled = true, SmallChange = 5, LargeChange = 10, Margin = new Thickness(0, 5, 0, 0) };
+            var opacitySlider = new Slider { Minimum = 20, Maximum = 100, Value = Math.Round(journal.Settings.WindowOpacity * 100), TickFrequency = 5, IsSnapToTickEnabled = true, SmallChange = 5, LargeChange = 10, Margin = new Thickness(0, 5, 0, 0) };
             AutomationProperties.SetName(opacitySlider, "Window opacity"); stack.Children.Add(opacitySlider);
-            var opacityHint = UI.Text("At 100% the window is solid. Backgrounds only keeps text clear; small buttons stay solid so they remain easy to use.", 11, "Muted"); opacityHint.Margin = new Thickness(0, 4, 0, 2); stack.Children.Add(opacityHint);
+            var opacityHint = UI.Text("At 100% the window is solid. Backgrounds only keeps text clear and reduces the extra tint on quest cards; small buttons stay solid so they remain easy to use.", 11, "Muted"); opacityHint.Margin = new Thickness(0, 4, 0, 2); stack.Children.Add(opacityHint);
             bool resettingOpacity = false;
             opacitySlider.ValueChanged += delegate
             {

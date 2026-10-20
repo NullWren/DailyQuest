@@ -151,6 +151,8 @@ class ModelTests
         var savedVisibility = Storage.Decode(Storage.Encode(customVisibility));
         Assert(Math.Abs(savedVisibility.Settings.WindowOpacity - 0.7) < 0.001 && savedVisibility.Settings.BackgroundOnlyOpacity, "Background-only visibility choice survives JSON round trip");
         customVisibility.Settings.WindowOpacity = 0.2;
+        Assert(Math.Abs(Storage.Decode(Storage.Encode(customVisibility)).Settings.WindowOpacity - 0.2) < 0.001, "Twenty-percent window visibility is allowed");
+        customVisibility.Settings.WindowOpacity = 0.1;
         bool refusedVisibility = false; try { Storage.Decode(Storage.Encode(customVisibility)); } catch (InvalidDataException) { refusedVisibility = true; }
         Assert(refusedVisibility, "Unusable window visibility is rejected");
         bool refused = false; cloned.Version = 99; try { Storage.Decode(Storage.Encode(cloned)); } catch (InvalidDataException) { refused = true; }

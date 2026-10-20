@@ -77,13 +77,19 @@ class ThemeTests
                 try
                 {
                     var dialog = app.Windows.Cast<Window>().Single(w => w.Title == "WrenFeed · Settings");
+                    Assert(dialog.ResizeMode == ResizeMode.NoResize && dialog.WindowState == WindowState.Normal, "Modal settings cannot hide behind the quest log via minimize");
+                    dialog.WindowState = WindowState.Minimized;
+                    Assert(dialog.WindowState == WindowState.Normal, "Unexpected minimize requests restore the settings window");
                     var opacity = Walk(dialog).OfType<Slider>().Single(s => AutomationProperties.GetName(s) == "Window opacity");
                     opacity.Value = 80;
                     Assert(Math.Abs(window.Opacity - 0.8) < 0.001 && Math.Abs(journal.Settings.WindowOpacity - 0.8) < 0.001, "Whole-window visibility slider applies and saves immediately");
                     var backgroundMode = Walk(dialog).OfType<RadioButton>().Single(r => AutomationProperties.GetName(r) == "Fade backgrounds only");
+                    Assert(Walk(dialog).OfType<RadioButton>().Where(r => r.GroupName == "OpacityMode").All(r => Object.ReferenceEquals(r.Foreground, UI.Brush("Ink"))), "Visibility choices use readable theme text colors");
                     backgroundMode.IsChecked = true;
                     Assert(journal.Settings.BackgroundOnlyOpacity && window.Opacity == 1, "Background-only mode keeps quest text at full opacity");
-                    Assert(Walk(window).OfType<Border>().Any(b => b.Background is SolidColorBrush && ((SolidColorBrush)b.Background).Color == ThemeManager.Current.Colors["Panel"] && Math.Abs(((SolidColorBrush)b.Background).Opacity - 0.8) < 0.001), "Background-only mode fades quest cards");
+                    Assert(Walk(window).OfType<Border>().Any(b => b.Background is SolidColorBrush && ((SolidColorBrush)b.Background).Color == ThemeManager.Current.Colors["Panel"] && Math.Abs(((SolidColorBrush)b.Background).Opacity - Math.Pow(0.8, 8)) < 0.001), "Quest-card tint no longer stacks heavily over the translucent window");
+                    opacity.Value = 20;
+                    Assert(Math.Abs(journal.Settings.WindowOpacity - 0.2) < 0.001 && Walk(window).OfType<Border>().Any(b => b.Background is SolidColorBrush && ((SolidColorBrush)b.Background).Color == ThemeManager.Current.Colors["Canvas"] && Math.Abs(((SolidColorBrush)b.Background).Opacity - 0.2) < 0.001), "Background-only visibility reaches 20 percent");
                     opacity.Value = 100;
                     var list = Walk(dialog).OfType<ComboBox>().Single(c => AutomationProperties.GetName(c) == "Theme");
                     list.SelectedItem = list.Items.Cast<ComboBoxItem>().Single(i => ((ThemeSpec)i.Tag).Id == "adventurers-ledger");
