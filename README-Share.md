@@ -6,7 +6,7 @@ Daily Quest is a tiny offline game checklist for daily and weekly tasks. It does
 
 1. Right-click `DailyQuest.zip` and choose **Extract All**.
 2. Open the extracted `DailyQuest` folder.
-3. Double-click `Start Daily Quest.cmd` (or `DailyQuest.exe`).
+3. Double-click `DailyQuest.exe` (or `Start Daily Quest.cmd`).
 4. Click **+ Game** to add the games and daily tasks you want to track.
 
 Windows may show a first-run warning because this is a small unsigned local app. Choose **More info**, then **Run anyway** if you trust the person who shared it.

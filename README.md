@@ -29,6 +29,7 @@ These local app/data paths are outside this source folder, which is under OneDri
 - `src/Model.cs`: plain data types, checklist rules, dated snapshots, weekly schedules, and storage. Stable game/line IDs and UTC completion timestamps support future streak calculations. Daily day keys remain local calendar dates. Journals from version 1 migrate to version 2 on load.
 - `src/App.cs`: WPF windows and interactions. No third-party runtime packages.
 - `src/Theme.xaml`: colors, fonts, and reusable control styles. One quest-log preset ships initially. Additional skins can use separate resource dictionaries without changing stored completion history.
+- `src/app-icon.png` is the transparent source artwork for the shortcut icon. `src/app.ico` contains Windows icon sizes and is embedded in the executable.
 - `tests/ModelTests.cs`: isolated model/storage tests; generates a separate UI fixture with example games.
 
 Build with `powershell -ExecutionPolicy Bypass -File .\build.ps1` from this directory. It uses the .NET Framework compiler already included with this Windows installation. Run model/storage tests with `powershell -ExecutionPolicy Bypass -File .\test.ps1` and in-process WPF editor tests with `powershell -ExecutionPolicy Bypass -File .\test-editor.ps1`. No downloads are required.
@@ -36,6 +37,8 @@ Build with `powershell -ExecutionPolicy Bypass -File .\build.ps1` from this dire
 Run `install.ps1` to copy the executable into the per-user Programs folder and create the desktop shortcut. No administrator privileges are required. Close Daily Quest before updating it. The source and build output remain in this project folder.
 
 The current shareable Windows package is in `release/DailyQuest.zip`. It contains only the app, a double-click launcher, and a friend-friendly README. Rebuild it with `package.ps1` after source changes.
+
+GitHub Actions runs the Windows build and both test suites on pushes and pull requests, then saves a fresh ZIP as a downloadable workflow artifact. It does not sign or publish a release automatically.
 
 For isolated testing: `DailyQuest.exe --data-dir "C:\path\to\test-folder"`. The desktop shortcut uses the normal local data folder and starts with no sample games.
 
