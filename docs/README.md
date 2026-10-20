@@ -27,7 +27,7 @@ The standings page reads `data/service.json` first. It now loads live scores fro
 
 Each `daily` and `weekly` value is the number of **completed quest cycles** in that game, not a point score or streak. Keep `key` stable even if a game’s display `name` changes. The site totals and sorts players in the browser; it does not collect or send anything. Only add scores that players have chosen to publish. Avoid publishing local quest descriptions, detailed history, or other personal data.
 
-GitHub Pages is static and cannot receive submissions itself. The optional receiver in [`leaderboard/`](../leaderboard/README.md) uses per-person invite codes. The desktop app shows a review of the exact counts before uploading, and keeps its local journal unchanged. Until the receiver is deployed, the page remains a preview and the upload button explains that the service is not open yet.
+GitHub Pages is static and cannot receive submissions itself. The connected receiver in [`leaderboard/`](../leaderboard/README.md) uses per-person invite codes. The desktop app shows a review of the exact counts before uploading, and keeps its local journal unchanged. The page remains a labeled preview until the first real upload.
 
 ## Local preview
 
