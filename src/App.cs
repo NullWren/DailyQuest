@@ -63,11 +63,11 @@ namespace DailyQuest
         public static Border Card(UIElement child)
         {
             var decoration = ThemeManager.Current.Decoration;
-            var card = new Border { Background = Brush("Panel"), BorderBrush = Brush("Edge"), BorderThickness = new Thickness(decoration == "filigree" || decoration == "manga" || decoration == "pixel" ? 2 : 1), CornerRadius = new CornerRadius(decoration == "none" ? 8 : decoration == "circuit" ? 4 : decoration == "manga" ? 2 : decoration == "chain" ? 6 : decoration == "whiskers" ? 14 : decoration == "pixel" ? 0 : 3), Padding = new Thickness(14) };
+            var card = new Border { Background = Brush("Panel"), BorderBrush = Brush("Edge"), BorderThickness = new Thickness(decoration == "filigree" || decoration == "manga" || decoration == "pixel" || decoration == "graffiti" ? 2 : 1), CornerRadius = new CornerRadius(decoration == "none" ? 8 : decoration == "circuit" ? 4 : decoration == "manga" || decoration == "graffiti" ? 2 : decoration == "chain" ? 6 : decoration == "whiskers" ? 14 : decoration == "flock" ? 12 : decoration == "pixel" ? 0 : 3), Padding = new Thickness(14) };
             if (decoration == "none") { card.Child = child; return card; }
             var panel = new StackPanel();
             var trim = new DockPanel { Margin = new Thickness(0, -5, 0, 10) };
-            string trimText = decoration == "circuit" ? "◇ ── ◇ ─────" : decoration == "manga" ? "╱╱  ✦  ╲╲" : decoration == "chain" ? "◇ · ◇ · ◇" : decoration == "whiskers" ? "✧  ·  ✧" : decoration == "pixel" ? "▪ ▪ ▪  ■" : "✦  ───  ✦  ───";
+            string trimText = decoration == "circuit" ? "◇ ── ◇ ─────" : decoration == "manga" ? "╱╱  ✦  ╲╲" : decoration == "graffiti" ? "✦  ╱╱  ◇  ╲╲  ✦" : decoration == "flock" ? "✦ · ✦ · ✦" : decoration == "chain" ? "◇ · ◇ · ◇" : decoration == "whiskers" ? "✧  ·  ✧" : decoration == "pixel" ? "▪ ▪ ▪  ■" : "✦  ───  ✦  ───";
             var mark = Text(trimText, 11, "Accent"); mark.Opacity = 0.8; mark.HorizontalAlignment = HorizontalAlignment.Right;
             trim.Children.Add(mark); panel.Children.Add(trim); panel.Children.Add(child); card.Child = panel;
             return card;
@@ -124,6 +124,27 @@ namespace DailyQuest
             block(3, 20, 8, 4, "Accent"); block(8, 16, 22, 12, "Accent"); block(14, 12, 18, 12, "Accent"); block(23, 7, 13, 13, "Accent");
             block(34, 13, 8, 4, "Success"); block(28, 11, 4, 4, "Ink"); block(14, 21, 11, 5, "Success"); block(14, 28, 3, 5, "Ink"); block(26, 28, 3, 5, "Ink");
             return bird;
+        }
+        public static Canvas GraffitiWing()
+        {
+            var mark = new Canvas { Width = 49, Height = 36, Margin = new Thickness(0, 0, 7, 0), ToolTip = "An original sprayed wing and star emblem" };
+            mark.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 3,26 Q 16,24 26,8 L 44,4 L 32,19 L 41,17 L 25,29 L 17,25 Z"), Fill = Brush("Accent"), Stroke = Brush("Ink"), StrokeThickness = 1.2, StrokeLineJoin = PenLineJoin.Round });
+            mark.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 4,11 L 7,14 L 4,17 L 1,14 Z M 43,25 L 45,27 L 43,29 L 41,27 Z"), Fill = Brush("Success") });
+            mark.Children.Add(new System.Windows.Shapes.Ellipse { Width = 2, Height = 2, Fill = Brush("Accent"), Margin = new Thickness(11, 3, 0, 0) });
+            mark.Children.Add(new System.Windows.Shapes.Ellipse { Width = 3, Height = 3, Fill = Brush("Success"), Margin = new Thickness(45, 11, 0, 0) });
+            return mark;
+        }
+        public static Canvas Flock()
+        {
+            var friends = new Canvas { Width = 113, Height = 36, Margin = new Thickness(0, 0, 5, 0), ToolTip = "The flock: G-Unit wren, red wren, and sphynx cat" };
+            friends.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 1,32 Q 55,35 111,32"), Stroke = Brush("Success"), StrokeThickness = 1.3, Opacity = 0.8 });
+            var grant = ChainWren(); grant.RenderTransform = new ScaleTransform(0.76, 0.76); Canvas.SetLeft(grant, 0); Canvas.SetTop(grant, 3); friends.Children.Add(grant);
+            var red = CuteWren();
+            var redBrush = new SolidColorBrush(Color.FromRgb(210, 83, 88));
+            foreach (var shape in red.Children.OfType<System.Windows.Shapes.Shape>()) if (Object.ReferenceEquals(shape.Fill, Brush("Accent"))) shape.Fill = redBrush;
+            red.RenderTransform = new ScaleTransform(0.76, 0.76); Canvas.SetLeft(red, 35); Canvas.SetTop(red, 3); friends.Children.Add(red);
+            var cat = Sphynx(); cat.RenderTransform = new ScaleTransform(0.76, 0.76); Canvas.SetLeft(cat, 72); Canvas.SetTop(cat, 1); friends.Children.Add(cat);
+            return friends;
         }
         public static void SetupDialog(Window dialog, Window owner, string title, double width, double height)
         {
@@ -484,11 +505,14 @@ namespace DailyQuest
                 case "sphynx": mascot = UI.Sphynx(); break;
                 case "pixel-wren": mascot = UI.PixelWren(); break;
                 case "manga-eye": mascot = UI.MangaEye(); break;
+                case "graffiti-wing": mascot = UI.GraffitiWing(); break;
+                case "flock": mascot = UI.Flock(); break;
             }
+            wrenBadge.Width = ThemeManager.Current.Mascot == "flock" ? 119 : 52;
             if (mascot != null) wrenBadge.Children.Add(mascot);
             wrenBadge.Visibility = mascot == null ? Visibility.Collapsed : Visibility.Visible;
             headerOrnament.Visibility = ThemeManager.Current.Decoration == "none" ? Visibility.Collapsed : Visibility.Visible;
-            headerOrnament.Text = ThemeManager.Current.Decoration == "circuit" ? "── ◇ ────── ◇ ──" : ThemeManager.Current.Decoration == "manga" ? "╱╱   ✦   ╲╲   ╱╱   ✦   ╲╲" : ThemeManager.Current.Decoration == "chain" ? "◇ ─ ◇ ─ ◇ ─ ◇" : ThemeManager.Current.Decoration == "whiskers" ? "✧   ᵕ   ✧   ᵕ   ✧" : ThemeManager.Current.Decoration == "pixel" ? "▪ ▪ ■ ▪ ▪ ■ ▪ ▪" : "✦  ───  ◇  ───  ✦";
+            headerOrnament.Text = ThemeManager.Current.Decoration == "circuit" ? "── ◇ ────── ◇ ──" : ThemeManager.Current.Decoration == "manga" ? "╱╱   ✦   ╲╲   ╱╱   ✦   ╲╲" : ThemeManager.Current.Decoration == "graffiti" ? "✦   ╱╱  COLOR THE QUEST  ╲╲   ✦" : ThemeManager.Current.Decoration == "flock" ? "✧  TOGETHER, ONE QUEST AT A TIME  ✧" : ThemeManager.Current.Decoration == "chain" ? "◇ ─ ◇ ─ ◇ ─ ◇" : ThemeManager.Current.Decoration == "whiskers" ? "✧   ᵕ   ✧   ᵕ   ✧" : ThemeManager.Current.Decoration == "pixel" ? "▪ ▪ ■ ▪ ▪ ■ ▪ ▪" : "✦  ───  ◇  ───  ✦";
         }
         StackPanel GameRow(GameResult game)
         {
@@ -667,8 +691,9 @@ namespace DailyQuest
             var themeLocation = UI.Text("Optional theme files stay in " + themes.Folder, 10, "Muted"); themeLocation.TextWrapping = TextWrapping.Wrap; themeLocation.Margin = new Thickness(0, 6, 0, 0); stack.Children.Add(themeLocation);
             stack.Children.Add(UI.Label("DAILY RESET")); stack.Children.Add(UI.Text("Each quest can reset at local midnight, a fixed UTC time, or a chosen number of hours after completion. Progress saves immediately, and earlier completions remain in History.", 12, "Muted"));
             stack.Children.Add(UI.Label("WEEKLY RESET")); stack.Children.Add(UI.Text("Choose a fixed UTC day and time, or the same UTC weekday seven days after completion. Weekly completion history appears on the Weekly tab.", 12, "Muted"));
-            stack.Children.Add(UI.Label("YOUR DATA")); stack.Children.Add(UI.Text("Stored only on this PC. No account or internet needed. A previous-save backup is kept automatically.", 12, "Muted"));
+            stack.Children.Add(UI.Label("YOUR DATA")); stack.Children.Add(UI.Text("Your journal stays on this PC. Only the optional leaderboard upload uses the internet. A previous-save backup is kept automatically.", 12, "Muted"));
             var buttons = new WrapPanel { Margin = new Thickness(0, 12, 0, 0) };
+            var leaderboard = UI.Button("Leaderboard upload…", delegate { OpenLeaderboard(dialog); }); leaderboard.Margin = new Thickness(0, 0, 8, 8); buttons.Children.Add(leaderboard);
             var questImport = UI.Button("Import quests", delegate { ImportQuests(dialog); }); questImport.Margin = new Thickness(0, 0, 8, 8); buttons.Children.Add(questImport);
             var export = UI.Button("Export backup", delegate { Export(dialog); }); export.Margin = new Thickness(0, 0, 8, 8); buttons.Children.Add(export);
             var import = UI.Button("Restore backup", delegate { Import(dialog); }); import.Margin = new Thickness(0, 0, 0, 8); buttons.Children.Add(import); stack.Children.Add(buttons);
@@ -694,6 +719,52 @@ namespace DailyQuest
                 if (archived.Children.Count == 0) archived.Children.Add(UI.Text("No archived games.", 12, "Muted"));
             }; renderArchived();
             var close = UI.Button("Done", delegate { dialog.Close(); }); close.HorizontalAlignment = HorizontalAlignment.Right; close.Margin = new Thickness(0, 22, 0, 0); UI.Primary(close); stack.Children.Add(close);
+            dialog.Content = new ScrollViewer { Content = stack, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+            dialog.ShowDialog();
+        }
+        void OpenLeaderboard(Window owner)
+        {
+            var snapshot = LeaderboardSnapshot.Create(journal);
+            var dialog = new Window(); UI.SetupDialog(dialog, owner, "WrenFeed · Leaderboard upload", 480, 570);
+            var stack = UI.Stack(); stack.Margin = new Thickness(22);
+            var title = UI.Text("Share your tally", 22, "Ink"); UI.Display(title); stack.Children.Add(title);
+            var intro = UI.Text("Your checklist remains local. Press Upload only when you want to share the nickname and game totals shown below. No dates, descriptions, subtask details, or journal file are sent.", 12, "Muted"); intro.Margin = new Thickness(0, 8, 0, 6); stack.Children.Add(intro);
+            LeaderboardIdentity saved = new LeaderboardIdentity();
+            try { saved = LeaderboardIdentity.Load(storage.Folder); }
+            catch (Exception) { /* A missing or unreadable local invite can be entered again. */ }
+            stack.Children.Add(UI.Label("PUBLIC NICKNAME"));
+            var nickname = UI.Field(saved.nickname ?? "", "Leaderboard nickname", 32); stack.Children.Add(nickname);
+            stack.Children.Add(UI.Label("PRIVATE INVITE CODE"));
+            var code = new PasswordBox { Password = saved.inviteCode ?? "", MinHeight = 32 }; AutomationProperties.SetName(code, "Leaderboard invite code"); stack.Children.Add(code);
+            var codeHint = UI.Text("Each person gets a separate code. WrenFeed saves it encrypted for your Windows account after a successful upload.", 11, "Muted"); codeHint.Margin = new Thickness(0, 5, 0, 0); stack.Children.Add(codeHint);
+            stack.Children.Add(UI.Label("WHAT WILL BE SHARED"));
+            var summary = UI.Text(snapshot.DailyTotal + " daily · " + snapshot.WeeklyTotal + " weekly completions across " + snapshot.games.Count + " games", 13, "Ink"); summary.FontWeight = FontWeights.SemiBold; stack.Children.Add(summary);
+            var rows = UI.Stack(); rows.Margin = new Thickness(0, 7, 0, 2);
+            foreach (var game in snapshot.games)
+            {
+                var row = UI.Text(game.name + "  ·  " + game.daily + " daily  /  " + game.weekly + " weekly", 11, "Muted"); row.Margin = new Thickness(0, 2, 0, 2); rows.Children.Add(row);
+            }
+            if (snapshot.games.Count == 0) rows.Children.Add(UI.Text("No completed quests are recorded yet.", 11, "Muted"));
+            var preview = new ScrollViewer { Content = rows, MaxHeight = 160, VerticalScrollBarVisibility = ScrollBarVisibility.Auto }; stack.Children.Add(preview);
+            var status = UI.Text("Uploads happen only when you press the button below.", 11, "Muted"); status.Margin = new Thickness(0, 12, 0, 8); stack.Children.Add(status);
+            var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+            var cancel = UI.Button("Close", delegate { dialog.Close(); }); cancel.Margin = new Thickness(0, 0, 8, 0); buttons.Children.Add(cancel);
+            Button upload = null;
+            upload = UI.Button("Upload totals", async delegate
+            {
+                var name = nickname.Text.Trim(); var invite = code.Password.Trim();
+                if (name.Length < 1 || invite.Length < 24) { status.Text = "Enter a nickname and your private invite code."; return; }
+                upload.IsEnabled = false; status.Text = "Sending the totals shown above…";
+                try
+                {
+                    await LeaderboardUpload.SendAsync(name, invite, snapshot);
+                    try { new LeaderboardIdentity { nickname = name, inviteCode = invite }.Save(storage.Folder); }
+                    catch (Exception) { status.Text = "Uploaded, but this PC could not remember your invite code. Enter it again next time."; return; }
+                    status.Text = "Uploaded. The leaderboard should show your latest totals shortly.";
+                }
+                catch (Exception error) { status.Text = error.Message; }
+                finally { upload.IsEnabled = true; }
+            }); UI.Primary(upload); upload.IsEnabled = snapshot.DailyTotal + snapshot.WeeklyTotal > 0; buttons.Children.Add(upload); stack.Children.Add(buttons);
             dialog.Content = new ScrollViewer { Content = stack, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
             dialog.ShowDialog();
         }

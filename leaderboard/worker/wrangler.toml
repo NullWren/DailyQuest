@@ -1,0 +1,9 @@
+name = "wrenfeed-leaderboard"
+main = "src/worker.mjs"
+compatibility_date = "2026-10-19"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wrenfeed-leaderboard"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+migrations_dir = "migrations"

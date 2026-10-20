@@ -1,0 +1,21 @@
+{
+  "format": "wrenfeed-theme",
+  "version": 1,
+  "id": "anime-graffiti",
+  "name": "Anime Graffiti",
+  "description": "Original street-poster energy: dark violet ink, vivid coral spray, mint sparks, and a wing-in-motion emblem.",
+  "colors": {
+    "Canvas": "#141321",
+    "Panel": "#23203A",
+    "Field": "#1B1930",
+    "Edge": "#806F9F",
+    "Ink": "#FFF4EF",
+    "Muted": "#D2C6D5",
+    "Accent": "#FF799D",
+    "Success": "#8CE3CA"
+  },
+  "fonts": { "body": "Segoe UI", "display": "Bahnschrift SemiCondensed" },
+  "decoration": "graffiti",
+  "mark": "✦",
+  "mascot": "graffiti-wing"
+}

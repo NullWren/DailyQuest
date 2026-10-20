@@ -32,6 +32,14 @@ jobs:
         shell: pwsh
         run: ./test-themes.ps1
 
+      - name: Test leaderboard tally and local invite storage
+        shell: pwsh
+        run: ./test-leaderboard.ps1
+
+      - name: Test leaderboard receiver
+        shell: pwsh
+        run: node --test leaderboard/worker/test.mjs
+
       - name: Package shareable app
         shell: pwsh
         run: ./package.ps1

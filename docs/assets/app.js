@@ -69,7 +69,17 @@ async function fetchData(path) {
 
 async function load() {
   try {
-    players = await fetchData('data/leaderboard.json');
+    const configResponse = await fetch('data/service.json', {cache: 'no-store'});
+    if (!configResponse.ok) throw new Error('Could not load leaderboard configuration');
+    const config = await configResponse.json();
+    if (config.version !== 1) throw new Error('Unsupported leaderboard configuration');
+    if (config.endpoint) {
+      const endpoint = new URL(config.endpoint);
+      if (endpoint.protocol !== 'https:' || !endpoint.hostname.endsWith('.workers.dev') || endpoint.pathname !== '/') throw new Error('Invalid leaderboard endpoint');
+      players = await fetchData(new URL('leaderboard', endpoint).href);
+    } else {
+      players = await fetchData('data/leaderboard.json');
+    }
     if (players.length === 0) {
       players = await fetchData('data/demo.json');
       preview = true;

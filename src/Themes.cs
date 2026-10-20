@@ -99,10 +99,10 @@ namespace DailyQuest
             object version;
             if (!root.TryGetValue("version", out version) || !(version is int) || (int)version != 1) throw new InvalidDataException("Use WrenFeed theme format version 1.");
             var theme = new ThemeSpec { Id = Text(root, "id", 40), Name = Text(root, "name", 60), Description = Text(root, "description", 160), Decoration = Text(root, "decoration", 16), Mark = Text(root, "mark", 4) };
-            theme.Mascot = root.ContainsKey("mascot") ? Text(root, "mascot", 10) : "none";
+            theme.Mascot = root.ContainsKey("mascot") ? Text(root, "mascot", 20) : "none";
             if (!Regex.IsMatch(theme.Id, "^[a-z][a-z0-9-]*$") || theme.Id == DefaultId) throw new InvalidDataException("Theme id must use lowercase letters, numbers, and hyphens, and cannot be \"quest\".");
-            if (!new[] { "none", "circuit", "filigree", "manga", "chain", "whiskers", "pixel" }.Contains(theme.Decoration)) throw new InvalidDataException("Unknown theme decoration.");
-            if (!new[] { "none", "wren", "chain-wren", "sphynx", "pixel-wren", "manga-eye" }.Contains(theme.Mascot)) throw new InvalidDataException("Unknown theme mascot.");
+            if (!new[] { "none", "circuit", "filigree", "manga", "chain", "whiskers", "pixel", "graffiti", "flock" }.Contains(theme.Decoration)) throw new InvalidDataException("Unknown theme decoration.");
+            if (!new[] { "none", "wren", "chain-wren", "sphynx", "pixel-wren", "manga-eye", "graffiti-wing", "flock" }.Contains(theme.Mascot)) throw new InvalidDataException("Unknown theme mascot.");
             object rawFonts, rawColors;
             if (!root.TryGetValue("fonts", out rawFonts) || !root.TryGetValue("colors", out rawColors)) throw new InvalidDataException("Theme needs fonts and colors objects.");
             var fonts = Object(rawFonts, "fonts"); Keys(fonts, FontKeys, "fonts");
@@ -147,7 +147,7 @@ namespace DailyQuest
             }
             resources["BodyFont"] = new FontFamily(theme.BodyFont);
             resources["DisplayFont"] = new FontFamily(theme.DisplayFont);
-            resources["ControlCornerRadius"] = new CornerRadius(theme.Decoration == "pixel" ? 0 : theme.Decoration == "whiskers" ? 9 : theme.Decoration == "manga" ? 2 : 5);
+            resources["ControlCornerRadius"] = new CornerRadius(theme.Decoration == "pixel" ? 0 : theme.Decoration == "whiskers" ? 9 : theme.Decoration == "manga" || theme.Decoration == "graffiti" ? 2 : 5);
             Current = theme;
         }
     }

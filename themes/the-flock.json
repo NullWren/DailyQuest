@@ -1,0 +1,21 @@
+{
+  "format": "wrenfeed-theme",
+  "version": 1,
+  "id": "the-flock",
+  "name": "The Flock",
+  "description": "A cozy twilight perch for three friends: the G-medallion wren, a red wren, and the sphynx cat.",
+  "colors": {
+    "Canvas": "#111C20",
+    "Panel": "#1D3031",
+    "Field": "#172628",
+    "Edge": "#648A85",
+    "Ink": "#F5F0E2",
+    "Muted": "#C4D2C8",
+    "Accent": "#E7C478",
+    "Success": "#A2DCBE"
+  },
+  "fonts": { "body": "Segoe UI", "display": "Georgia" },
+  "decoration": "flock",
+  "mark": "✧",
+  "mascot": "flock"
+}

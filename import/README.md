@@ -2,7 +2,7 @@
 
 Copy [template.json](template.json), replace the examples with your own quests, and save it as a `.json` file. In WrenFeed, open **Settings → Import quests**, choose the file, review the preview, and select **Add quests**. One file can contain daily and weekly quests together. The template demonstrates every reset option available in the editor and both checkbox and note lines.
 
-You can give an AI chatbot this README and the template, then ask it to produce a WrenFeed quest file. Check the game-specific reset rules it suggests before importing. Use ordinary UTF-8 JSON: double quotes around field names and text, commas between items, and no comments or trailing commas.
+You can use the ready-to-copy [AI chat prompt](AI-PROMPT.md) with this README and the template to create your quest file from plain-English tasks. It asks about important missing reset details instead of guessing. Check the game-specific reset rules it suggests before importing. Use ordinary UTF-8 JSON: double quotes around field names and text, commas between items, and no comments or trailing commas.
 
 Each item in `quests` represents one independently resettable quest. `game` is the optional game-group heading; give related quests the same `game` value to show them in one panel. `name` is the quest title and `description` is the optional short text below it. A `lines` item with `"checkbox": true` is a subtask; `false` is an informational note. All checkable lines share the quest's reset rule. If two tasks need different resets or separate descriptions, make them separate quests in the same game group.
 

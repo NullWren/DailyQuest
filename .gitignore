@@ -4,7 +4,10 @@ build/ModelTests.exe
 build/EditorTests.exe
 build/ImportTests.exe
 build/ThemeTests.exe
+build/LeaderboardTests.exe
+build/test-leaderboard-*/
 build/DailyQuest.exe
 build/WrenFeed.exe
 release/DailyQuest/
 release/WrenFeed/
+leaderboard/worker/.wrangler/

@@ -1,0 +1,12 @@
+CREATE TABLE IF NOT EXISTS invites (
+  code_hash TEXT PRIMARY KEY,
+  player_id TEXT NOT NULL UNIQUE,
+  revoked INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS players (
+  id TEXT PRIMARY KEY,
+  nickname TEXT NOT NULL,
+  score_json TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
