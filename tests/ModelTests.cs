@@ -100,7 +100,8 @@ class ModelTests
         var utcCopy = Storage.Decode(Storage.Encode(journal));
         Assert(utcCopy.DailyUtcRecords.Count == 2 && utcCopy.Games.First(g => g.Id == utcDaily.Id).GroupName == "Warframe", "UTC daily schedules and game groups survive JSON round trip");
         var forma = new Game { Name = "Forma", GroupName = "Warframe", DailyReset = "after-completion", DailyIntervalHours = 23 };
-        var builtAt = new DateTime(2026, 10, 20, 23, 30, 0, DateTimeKind.Utc);
+        // Keep the next hour on the same local date on both developer PCs and UTC CI runners.
+        var builtAt = new DateTime(2026, 10, 20, 12, 0, 0, DateTimeKind.Local).ToUniversalTime();
         journal.SaveGame(forma, builtAt.ToLocalTime(), builtAt);
         var firstForma = journal.CurrentDailyInterval(forma, builtAt);
         journal.ToggleGame(forma.Id, true, builtAt.ToLocalTime(), builtAt);
@@ -121,7 +122,7 @@ class ModelTests
         var firstHourly = journal.CurrentDailyInterval(hourly, builtAt);
         var secondHourly = journal.CurrentDailyInterval(hourly, builtAt.AddHours(1));
         journal.ToggleGame(hourly.Id, true, builtAt.AddHours(1).ToLocalTime(), builtAt.AddHours(1));
-        Assert(firstHourly.Id != secondHourly.Id && secondHourly.Result.Done, "Rolling quest can have two completed cycles on one local date");
+        Assert(Journal.DateKey(builtAt.ToLocalTime()) == Journal.DateKey(builtAt.AddHours(1).ToLocalTime()) && firstHourly.Id != secondHourly.Id && secondHourly.Result.Done, "Rolling quest can have two completed cycles on one local date");
         var defaultRolling = new Game { Name = "Default interval", DailyReset = "after-completion" };
         journal.SaveGame(defaultRolling, builtAt.ToLocalTime(), builtAt);
         journal.ToggleGame(defaultRolling.Id, true, builtAt.ToLocalTime(), builtAt);
