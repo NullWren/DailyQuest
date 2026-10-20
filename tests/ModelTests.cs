@@ -82,8 +82,27 @@ class ModelTests
         Assert(weeklyCopy.WeeklyGames.First(g => g.Id == weekly.Id).Archived && firstWeekly.Result.Done, "Archiving weekly quest preserves completed history");
         weeklyCopy.RestoreWeekly(weekly.Id, new DateTime(2026, 10, 25, 1, 0, 0, DateTimeKind.Utc));
         Assert(!weeklyCopy.WeeklyGames.First(g => g.Id == weekly.Id).Archived, "Archived weekly quest can be restored");
+        weekly.GroupName = "OSRS"; fixedGame.GroupName = "OSRS";
+        journal.SaveWeeklyGame(weekly, new DateTime(2026, 10, 25, 1, 0, 0, DateTimeKind.Utc));
+        journal.SaveWeeklyGame(fixedGame, new DateTime(2026, 10, 22, 18, 30, 0, DateTimeKind.Utc));
+        Assert(journal.CurrentWeekly(weekly, new DateTime(2026, 10, 25, 1, 0, 0, DateTimeKind.Utc)).Result.GroupName == "OSRS" && journal.CurrentWeekly(fixedGame, new DateTime(2026, 10, 22, 18, 30, 0, DateTimeKind.Utc)).Result.GroupName == "OSRS", "Independent weekly rules can share one game group");
+        Assert(firstWeekly.Result.GroupName == "" && oldFixed.Result.GroupName == "", "Grouping does not rewrite past history");
+        var utcDaily = new Game { Name = "Sortie", GroupName = "Warframe", DailyReset = "utc", DailyHourUtc = 17 };
+        var beforeReset = new DateTime(2026, 10, 20, 16, 59, 0, DateTimeKind.Utc);
+        journal.SaveGame(utcDaily, beforeReset.ToLocalTime(), beforeReset);
+        var utcOld = journal.CurrentDailyUtc(utcDaily, beforeReset);
+        journal.ToggleGame(utcDaily.Id, true, beforeReset.ToLocalTime(), beforeReset);
+        Assert(Journal.DailyCycleStart(utcDaily, beforeReset) == new DateTime(2026, 10, 19, 17, 0, 0, DateTimeKind.Utc), "UTC daily waits until its configured reset hour");
+        var afterReset = beforeReset.AddMinutes(1);
+        var utcNew = journal.CurrentDailyUtc(utcDaily, afterReset);
+        Assert(utcNew.Id != utcOld.Id && !utcNew.Result.Done && utcOld.Result.Done, "UTC daily rollover preserves history and resets only that quest");
+        Assert(!journal.Today(afterReset.ToLocalTime()).Games.Any(g => g.Id == utcDaily.Id), "UTC daily quest is not duplicated in local daily snapshots");
+        var utcCopy = Storage.Decode(Storage.Encode(journal));
+        Assert(utcCopy.DailyUtcRecords.Count == 2 && utcCopy.Games.First(g => g.Id == utcDaily.Id).GroupName == "Warframe", "UTC daily schedules and game groups survive JSON round trip");
         var legacy = new Journal { Version = 1 }; var migrated = Storage.Decode(Storage.Encode(legacy));
-        Assert(migrated.Version == 2 && migrated.WeeklyGames.Count == 0 && migrated.WeeklyRecords.Count == 0, "Version 1 daily journal migrates to weekly-capable version 2");
+        Assert(migrated.Version == 3 && migrated.WeeklyGames.Count == 0 && migrated.WeeklyRecords.Count == 0 && migrated.DailyUtcRecords.Count == 0, "Version 1 daily journal migrates to version 3");
+        var legacyWeekly = new Journal { Version = 2 }; var migratedWeekly = Storage.Decode(Storage.Encode(legacyWeekly));
+        Assert(migratedWeekly.Version == 3 && migratedWeekly.DailyUtcRecords.Count == 0, "Version 2 weekly journal migrates without losing history");
         bool refused = false; cloned.Version = 99; try { Storage.Decode(Storage.Encode(cloned)); } catch (InvalidDataException) { refused = true; }
         Assert(refused, "Future schema versions are refused without overwrite");
         using (var store = new Storage(root))

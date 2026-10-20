@@ -4,12 +4,13 @@ A small, offline Windows quest log for daily and weekly games. Launch **Daily Qu
 
 ## Using it
 
-- **+ Game** adds a game, a short description, and any number of extra lines. Enable **Checkbox** on a line to make it an individual task; leave it off for a plain note. Blank lines are ignored when saving.
-- Check the game to complete all its tasks. Completing every checkable task automatically completes the game. Unchecking the game clears its tasks; unchecking one task reopens the game.
-- The **···** menu edits, reorders, or archives a game. Archiving keeps its history. Restore archived games in Settings.
+- **+ Game** adds a quest, a short description, and any number of extra lines. Enable **Checkbox** on a line to make it an individual task; leave it off for a plain note. Blank lines are ignored when saving.
+- Set the optional **Game group** while editing to show related quests in one panel. For example, set both Tears of Guthix and Kingdom check-in to **OSRS**. The group heading has no checkbox; each quest keeps its own completion, reset rule, and history. Existing entries are ungrouped until you edit them. Use **+ Quest** in a group to add another quest there.
+- Check a quest to complete all its tasks. Completing every checkable task automatically completes the quest. Unchecking the quest clears its tasks; unchecking one task reopens the quest.
+- The **···** menu edits, reorders, or archives a quest. Archiving keeps its history. Restore archived quests in Settings.
 - **History** shows a read-only snapshot for a date. Past game names, descriptions, task text, and results stay intact when you change today's list. Today is updated as you edit it.
 - **Weekly** has its own game list and recent completion history. Each weekly game can reset on a fixed UTC weekday and time, or at **00:00 UTC on the seventh day after its last completion**. The second option suits Tears of Guthix: a completion on Sunday UTC becomes available the following Sunday at 00:00 UTC. The tab shows the next reset in your local time after completion.
-- The checklist resets at **local midnight**, including while the window stays open. If the app is closed, the next launch creates the current day's list. Unopened days have no recorded result and are never assumed complete. The app uses your Windows local date/time.
+- Daily quests can reset at **local midnight** (the default) or at a chosen **UTC time**. This allows games with server-wide resets to share a group with quests that follow local time. The window detects resets while open. If the app is closed, the next launch creates the current cycle. Unopened cycles have no recorded result and are never assumed complete.
 - Settings includes **always on top**, completion animations, and backup export/restore. Backups include daily and weekly games and their history. Restoring a backup replaces the journal, after confirmation, and preserves a separate copy of the journal being replaced.
 - Resize the window to suit your list. Closing the window exits the app; it does not keep running in the tray. Window size is remembered.
 - Keyboard: **Ctrl+N** adds a game, **Ctrl+H** toggles History, **Ctrl+,** opens Settings, **Esc** closes a dialog.
@@ -26,7 +27,7 @@ These local app/data paths are outside this source folder, which is under OneDri
 
 ## Development
 
-- `src/Model.cs`: plain data types, checklist rules, dated snapshots, weekly schedules, and storage. Stable game/line IDs and UTC completion timestamps support future streak calculations. Daily day keys remain local calendar dates. Journals from version 1 migrate to version 2 on load.
+- `src/Model.cs`: plain data types, checklist rules, dated snapshots, per-quest schedules, and storage. Stable quest/line IDs and UTC completion timestamps support future streak calculations. Local daily day keys remain local calendar dates; UTC daily and weekly cycles have independent records. Journals from versions 1 and 2 migrate to version 3 on load.
 - `src/App.cs`: WPF windows and interactions. No third-party runtime packages.
 - `src/Theme.xaml`: colors, fonts, and reusable control styles. One quest-log preset ships initially. Additional skins can use separate resource dictionaries without changing stored completion history.
 - `src/app-icon.png` is the transparent source artwork for the shortcut icon. `src/app.ico` contains Windows icon sizes and is embedded in the executable.
