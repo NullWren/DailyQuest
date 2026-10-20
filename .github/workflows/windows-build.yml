@@ -28,6 +28,10 @@ jobs:
         shell: pwsh
         run: ./test-editor.ps1
 
+      - name: Test optional themes and settings
+        shell: pwsh
+        run: ./test-themes.ps1
+
       - name: Package shareable app
         shell: pwsh
         run: ./package.ps1

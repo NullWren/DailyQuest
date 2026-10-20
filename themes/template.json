@@ -1,0 +1,21 @@
+{
+  "format": "wrenfeed-theme",
+  "version": 1,
+  "id": "my-theme",
+  "name": "My Theme",
+  "description": "A short note about the theme's look.",
+  "colors": {
+    "Canvas": "#12151C",
+    "Panel": "#1C202A",
+    "Field": "#151921",
+    "Edge": "#363D49",
+    "Ink": "#F0EBDD",
+    "Muted": "#ACB1BE",
+    "Accent": "#D7B77A",
+    "Success": "#91C7AA"
+  },
+  "fonts": { "body": "Segoe UI", "display": "Georgia" },
+  "decoration": "none",
+  "mark": "◇",
+  "mascot": "none"
+}

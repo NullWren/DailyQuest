@@ -1,0 +1,21 @@
+{
+  "format": "wrenfeed-theme",
+  "version": 1,
+  "id": "neon-aviary",
+  "name": "Neon Aviary",
+  "description": "Midnight navy, luminous teal, and crisp circuit details.",
+  "colors": {
+    "Canvas": "#0B101A",
+    "Panel": "#151F2B",
+    "Field": "#101924",
+    "Edge": "#315164",
+    "Ink": "#E9F8FA",
+    "Muted": "#ADD1D7",
+    "Accent": "#5FE0EA",
+    "Success": "#8BE1B7"
+  },
+  "fonts": { "body": "Segoe UI", "display": "Consolas" },
+  "decoration": "circuit",
+  "mark": "◇",
+  "mascot": "none"
+}

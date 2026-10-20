@@ -18,7 +18,7 @@ Windows may show a first-run warning because this is a small unsigned local app.
 - Checking a game checks all of its tasks. Completing all its tasks completes the game.
 - Each quest has its own completion and reset rule, even within a group. Daily quests can start fresh at local midnight, at a fixed UTC time, or a chosen number of hours after completion. History saves earlier results.
 - The **Weekly** tab keeps a separate list. Set each game to a fixed UTC reset day and time, or to reset at 00:00 UTC seven days after completion (useful for Tears of Guthix). Recent weekly completions appear below the current list.
-- **Settings** includes an optional always-on-top mode, completion animations, and backup export/restore.
+- **Settings** includes optional themes, an always-on-top mode, completion animations, and backup export/restore. Open **Install theme file…** and choose one of the two optional files in the included `themes` folder; select **Default** to restore the original look. The folder has its own README and custom-theme template.
 - **Import quests** in Settings adds quests from a JSON file. The included `import` folder has a template and README showing daily and weekly examples. Importing does not replace your history.
 
 Your data stays on your computer in `%LOCALAPPDATA%\DailyQuest\journal.json`. WrenFeed keeps the original Daily Quest data location so an upgrade retains your history. The app never sends it anywhere. You can use **Settings → Export backup** to make a copy before moving to another computer.

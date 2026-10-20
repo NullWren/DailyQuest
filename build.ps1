@@ -9,6 +9,7 @@ $compilerArgs = @('/nologo','/target:winexe','/optimize+','/utf8output',('/out:'
 foreach ($reference in $references) { $compilerArgs += '/reference:' + (Join-Path $frameworkPath $reference) }
 $compilerArgs += (Join-Path $projectPath 'src\Model.cs')
 $compilerArgs += (Join-Path $projectPath 'src\QuestImport.cs')
+$compilerArgs += (Join-Path $projectPath 'src\Themes.cs')
 $compilerArgs += (Join-Path $projectPath 'src\App.cs')
 & $compilerPath @compilerArgs
 if ($LASTEXITCODE -ne 0) { throw 'WrenFeed compilation failed.' }

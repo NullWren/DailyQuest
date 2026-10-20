@@ -7,10 +7,12 @@
   <SolidColorBrush x:Key="Muted" Color="#ACB1BE"/>
   <SolidColorBrush x:Key="Accent" Color="#D7B77A"/>
   <SolidColorBrush x:Key="Success" Color="#91C7AA"/>
+  <FontFamily x:Key="BodyFont">Segoe UI</FontFamily>
+  <FontFamily x:Key="DisplayFont">Georgia</FontFamily>
   <Style TargetType="Window">
     <Setter Property="Background" Value="{DynamicResource Canvas}"/>
     <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
-    <Setter Property="FontFamily" Value="Segoe UI"/>
+    <Setter Property="FontFamily" Value="{DynamicResource BodyFont}"/>
     <Setter Property="FontSize" Value="13"/>
     <Setter Property="UseLayoutRounding" Value="True"/>
   </Style>

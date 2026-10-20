@@ -1,0 +1,21 @@
+{
+  "format": "wrenfeed-theme",
+  "version": 1,
+  "id": "adventurers-ledger",
+  "name": "Adventurer's Ledger",
+  "description": "Warm parchment, brass flourishes, and a little wren on the header.",
+  "colors": {
+    "Canvas": "#E7D7B6",
+    "Panel": "#F7EBCF",
+    "Field": "#FCF4E2",
+    "Edge": "#8A684A",
+    "Ink": "#332A24",
+    "Muted": "#594B3E",
+    "Accent": "#74501D",
+    "Success": "#375C42"
+  },
+  "fonts": { "body": "Georgia", "display": "Georgia" },
+  "decoration": "filigree",
+  "mark": "✦",
+  "mascot": "wren"
+}

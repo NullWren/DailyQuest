@@ -5,6 +5,7 @@ $compilerArgs = @('/nologo','/target:exe','/main:EditorTests',('/out:' + (Join-P
 foreach ($reference in @('System.dll','System.Core.dll','System.Runtime.Serialization.dll','System.Web.Extensions.dll','System.Xml.dll','System.Xaml.dll','WPF\WindowsBase.dll','WPF\PresentationCore.dll','WPF\PresentationFramework.dll')) { $compilerArgs += '/reference:' + (Join-Path $frameworkPath $reference) }
 $compilerArgs += (Join-Path $projectPath 'src\Model.cs')
 $compilerArgs += (Join-Path $projectPath 'src\QuestImport.cs')
+$compilerArgs += (Join-Path $projectPath 'src\Themes.cs')
 $compilerArgs += (Join-Path $projectPath 'src\App.cs')
 $compilerArgs += (Join-Path $projectPath 'tests\EditorTests.cs')
 & (Join-Path $frameworkPath 'csc.exe') @compilerArgs

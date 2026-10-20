@@ -14,5 +14,6 @@ Copy-Item -LiteralPath (Join-Path $projectPath 'build\WrenFeed.exe') -Destinatio
 Copy-Item -LiteralPath (Join-Path $projectPath 'README-Share.md') -Destination (Join-Path $stagePath 'README.md')
 Copy-Item -LiteralPath (Join-Path $projectPath 'Start WrenFeed.cmd') -Destination (Join-Path $stagePath 'Start WrenFeed.cmd')
 Copy-Item -LiteralPath (Join-Path $projectPath 'import') -Destination (Join-Path $stagePath 'import') -Recurse
+Copy-Item -LiteralPath (Join-Path $projectPath 'themes') -Destination (Join-Path $stagePath 'themes') -Recurse
 Compress-Archive -Path (Join-Path $stagePath '*') -DestinationPath $zipPath -CompressionLevel Optimal
 Write-Output ('Created shareable package: ' + $zipPath)

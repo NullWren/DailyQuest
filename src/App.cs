@@ -40,7 +40,8 @@ namespace DailyQuest
     }
     public static class UI
     {
-        public static Brush Brush(string key) { return (Brush)Application.Current.FindResource(key); }
+        public static Brush Brush(string key) { return ThemeManager.Brush(key); }
+        public static void Display(TextBlock text) { text.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont"); }
         public static TextBlock Text(string text, double size, string color)
         {
             return new TextBlock { Text = text, FontSize = size, Foreground = Brush(color), TextWrapping = TextWrapping.Wrap };
@@ -57,7 +58,31 @@ namespace DailyQuest
         {
             var field = new TextBox { Text = text ?? "", MaxLength = max }; AutomationProperties.SetName(field, name); return field;
         }
-        public static Border Card(UIElement child) { return new Border { Background = Brush("Panel"), BorderBrush = Brush("Edge"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8), Padding = new Thickness(14), Child = child }; }
+        public static Border Card(UIElement child)
+        {
+            var decoration = ThemeManager.Current.Decoration;
+            var card = new Border { Background = Brush("Panel"), BorderBrush = Brush("Edge"), BorderThickness = new Thickness(decoration == "filigree" ? 2 : 1), CornerRadius = new CornerRadius(decoration == "none" ? 8 : decoration == "circuit" ? 4 : 3), Padding = new Thickness(14) };
+            if (decoration == "none") { card.Child = child; return card; }
+            var panel = new StackPanel();
+            var trim = new DockPanel { Margin = new Thickness(0, -5, 0, 10) };
+            var mark = Text(decoration == "circuit" ? "◇ ── ◇ ─────" : "✦  ───  ✦  ───", 11, "Accent"); mark.Opacity = 0.8; mark.HorizontalAlignment = HorizontalAlignment.Right;
+            trim.Children.Add(mark); panel.Children.Add(trim); panel.Children.Add(child); card.Child = panel;
+            return card;
+        }
+        public static Canvas CuteWren()
+        {
+            var bird = new Canvas { Width = 43, Height = 33, Margin = new Thickness(0, 0, 10, 0), ToolTip = "A little wren keeping watch" };
+            Action<System.Windows.Shapes.Shape, double, double> add = delegate(System.Windows.Shapes.Shape shape, double left, double top) { Canvas.SetLeft(shape, left); Canvas.SetTop(shape, top); bird.Children.Add(shape); };
+            add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 12,20 L 1,11 L 5,23 L 14,26 Z"), Fill = Brush("Accent") }, 0, 0);
+            add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 20,25 L 18,30 M 27,24 L 29,30 M 9,30 L 36,30"), Stroke = Brush("Ink"), StrokeThickness = 1.4, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round }, 0, 0);
+            add(new System.Windows.Shapes.Ellipse { Width = 26, Height = 19, Fill = Brush("Accent") }, 10, 10);
+            add(new System.Windows.Shapes.Ellipse { Width = 18, Height = 14, Fill = Brush("Panel") }, 15, 14);
+            add(new System.Windows.Shapes.Ellipse { Width = 14, Height = 10, Fill = Brush("Success"), Opacity = 0.8 }, 11, 13);
+            add(new System.Windows.Shapes.Ellipse { Width = 17, Height = 17, Fill = Brush("Accent") }, 23, 3);
+            add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 36,11 L 43,14 L 36,16 Z"), Fill = Brush("Success") }, 0, 0);
+            add(new System.Windows.Shapes.Ellipse { Width = 2.8, Height = 2.8, Fill = Brush("Ink") }, 33, 9);
+            return bird;
+        }
         public static void SetupDialog(Window dialog, Window owner, string title, double width, double height)
         {
             dialog.SetResourceReference(FrameworkElement.StyleProperty, typeof(Window));
@@ -70,12 +95,16 @@ namespace DailyQuest
     public sealed class QuestWindow : Window
     {
         readonly Storage storage;
+        readonly ThemeManager themes;
         Journal journal;
         readonly DockPanel root = new DockPanel();
         readonly StackPanel cards = new StackPanel();
         readonly TextBlock heading = UI.Text("", 24, "Ink");
         readonly TextBlock summary = UI.Text("", 12, "Muted");
         readonly TextBlock footer = UI.Text("Saved on this device · resets at midnight", 11, "Muted");
+        readonly TextBlock brand = UI.Text("◇  W R E N F E E D", 11, "Accent");
+        readonly TextBlock headerOrnament = UI.Text("", 11, "Accent");
+        readonly Canvas wrenBadge = UI.CuteWren();
         readonly Border fill = new Border { Height = 3, HorizontalAlignment = HorizontalAlignment.Left };
         readonly Border track = new Border { Height = 3 };
         readonly StackPanel dateArea = new StackPanel();
@@ -93,6 +122,8 @@ namespace DailyQuest
         {
             SetResourceReference(FrameworkElement.StyleProperty, typeof(Window));
             this.storage = storage; this.journal = journal;
+            themes = new ThemeManager(storage.Folder);
+            ThemeManager.Apply(themes.Find(journal.Settings.Theme));
             Title = "WrenFeed";
             Width = Math.Max(350, Math.Min(journal.Settings.Width, SystemParameters.WorkArea.Width));
             Height = Math.Max(440, Math.Min(journal.Settings.Height, SystemParameters.WorkArea.Height - 35));
@@ -103,8 +134,11 @@ namespace DailyQuest
             var masthead = new DockPanel();
             var settings = UI.Button("⚙", OpenSettings); settings.FontSize = 17; settings.Width = 34; settings.Padding = new Thickness(0); settings.ToolTip = "Settings (Ctrl+,)"; AutomationProperties.SetName(settings, "Settings");
             DockPanel.SetDock(settings, Dock.Right); masthead.Children.Add(settings);
-            var brand = UI.Text("◇  W R E N F E E D", 11, "Accent"); brand.VerticalAlignment = VerticalAlignment.Center; masthead.Children.Add(brand); top.Children.Add(masthead);
-            heading.FontFamily = new FontFamily("Georgia"); heading.Margin = new Thickness(0, 17, 0, 6); top.Children.Add(heading);
+            DockPanel.SetDock(wrenBadge, Dock.Right); masthead.Children.Add(wrenBadge);
+            brand.VerticalAlignment = VerticalAlignment.Center; masthead.Children.Add(brand); top.Children.Add(masthead);
+            headerOrnament.Margin = new Thickness(0, 7, 0, 0); headerOrnament.TextAlignment = TextAlignment.Center; top.Children.Add(headerOrnament);
+            UI.Display(heading); heading.Margin = new Thickness(0, 17, 0, 6); top.Children.Add(heading);
+            RefreshThemeChrome();
             summary.Margin = new Thickness(0, 0, 0, 12); top.Children.Add(summary);
             track.Background = UI.Brush("Edge"); fill.Background = UI.Brush("Accent"); track.Child = fill; top.Children.Add(track); track.SizeChanged += delegate { fill.Width = Math.Max(0, track.ActualWidth * fraction); };
             var tabs = new Grid { Margin = new Thickness(0, 16, 0, 14) };
@@ -208,7 +242,7 @@ namespace DailyQuest
             {
                 var empty = UI.Stack(); empty.Margin = new Thickness(10, 30, 10, 30);
                 var symbol = UI.Text("◇", 38, "Accent"); symbol.HorizontalAlignment = HorizontalAlignment.Center; empty.Children.Add(symbol);
-                var title = UI.Text(history ? "No quests recorded" : "Every adventure starts small", 18, "Ink"); title.FontFamily = new FontFamily("Georgia"); title.TextAlignment = TextAlignment.Center; title.Margin = new Thickness(0, 14, 0, 10); empty.Children.Add(title);
+                var title = UI.Text(history ? "No quests recorded" : "Every adventure starts small", 18, "Ink"); UI.Display(title); title.TextAlignment = TextAlignment.Center; title.Margin = new Thickness(0, 14, 0, 10); empty.Children.Add(title);
                 var copy = UI.Text(history ? "There is no saved checklist for this date. Days when the app was closed are not marked as completed." : "Add a game and the little daily tasks worth coming back for.", 13, "Muted"); copy.TextAlignment = TextAlignment.Center; empty.Children.Add(copy);
                 if (!history) { var add = UI.Button("+ Add your first game", delegate { EditGame(null); }); UI.Primary(add); add.Margin = new Thickness(0, 22, 0, 0); add.HorizontalAlignment = HorizontalAlignment.Center; empty.Children.Add(add); }
                 cards.Children.Add(UI.Card(empty));
@@ -232,7 +266,7 @@ namespace DailyQuest
             if (entries.Count == 0)
             {
                 var empty = UI.Stack(); empty.Margin = new Thickness(10, 30, 10, 30);
-                var title = UI.Text("A new weekly adventure", 18, "Ink"); title.FontFamily = new FontFamily("Georgia"); title.TextAlignment = TextAlignment.Center; empty.Children.Add(title);
+                var title = UI.Text("A new weekly adventure", 18, "Ink"); UI.Display(title); title.TextAlignment = TextAlignment.Center; empty.Children.Add(title);
                 var copy = UI.Text("Add a weekly game and choose when its quest resets.", 13, "Muted"); copy.Margin = new Thickness(0, 10, 0, 16); copy.TextAlignment = TextAlignment.Center; empty.Children.Add(copy);
                 var add = UI.Button("+ Add a weekly game", delegate { EditGame(null); }); UI.Primary(add); add.HorizontalAlignment = HorizontalAlignment.Center; empty.Children.Add(add);
                 cards.Children.Add(UI.Card(empty));
@@ -273,7 +307,7 @@ namespace DailyQuest
                     content.Children.Add(GameRow(members[i]));
                 }
                 var card = UI.Card(content); card.Margin = new Thickness(0, 0, 0, 10);
-                if (members.All(m => m.Done)) card.BorderBrush = new SolidColorBrush(Color.FromRgb(64, 89, 78));
+                if (members.All(m => m.Done)) card.BorderBrush = CompletedBorder();
                 if (members.Any(m => m.Id == flash)) Flash(card);
                 cards.Children.Add(card);
             }
@@ -287,9 +321,20 @@ namespace DailyQuest
         Border GameCard(GameResult game, bool flash)
         {
             var card = UI.Card(GameRow(game)); card.Margin = new Thickness(0, 0, 0, 10);
-            if (game.Done) card.BorderBrush = new SolidColorBrush(Color.FromRgb(64, 89, 78));
+            if (game.Done) card.BorderBrush = CompletedBorder();
             if (flash) Flash(card);
             return card;
+        }
+        static SolidColorBrush CompletedBorder()
+        {
+            return ThemeManager.Current.Decoration == "none" ? new SolidColorBrush(Color.FromRgb(64, 89, 78)) : new SolidColorBrush(ThemeManager.Current.Colors["Success"]);
+        }
+        void RefreshThemeChrome()
+        {
+            brand.Text = ThemeManager.Current.Mark + "  W R E N F E E D";
+            wrenBadge.Visibility = ThemeManager.Current.Mascot == "wren" ? Visibility.Visible : Visibility.Collapsed;
+            headerOrnament.Visibility = ThemeManager.Current.Decoration == "none" ? Visibility.Collapsed : Visibility.Visible;
+            headerOrnament.Text = ThemeManager.Current.Decoration == "circuit" ? "── ◇ ────── ◇ ──" : "✦  ───  ◇  ───  ✦";
         }
         StackPanel GameRow(GameResult game)
         {
@@ -386,13 +431,59 @@ namespace DailyQuest
         {
             var dialog = new Window(); UI.SetupDialog(dialog, this, "WrenFeed · Settings", 450, 580);
             var stack = UI.Stack(); stack.Margin = new Thickness(24);
-            var title = UI.Text("Make yourself at home", 22, "Ink"); title.FontFamily = new FontFamily("Georgia"); stack.Children.Add(title);
+            var title = UI.Text("Make yourself at home", 22, "Ink"); UI.Display(title); stack.Children.Add(title);
             var intro = UI.Text("A quiet little companion for your daily games.", 12, "Muted"); intro.Margin = new Thickness(0, 8, 0, 20); stack.Children.Add(intro);
             var pin = new CheckBox { Content = "Keep this window on top", IsChecked = journal.Settings.AlwaysOnTop, Margin = new Thickness(0, 0, 0, 10) };
             pin.Click += delegate { if (Change(delegate { journal.Settings.AlwaysOnTop = pin.IsChecked == true; }, null)) Topmost = journal.Settings.AlwaysOnTop; else pin.IsChecked = journal.Settings.AlwaysOnTop; };
             var animate = new CheckBox { Content = "Subtle completion animations", IsChecked = journal.Settings.Animate };
             animate.Click += delegate { if (!Change(delegate { journal.Settings.Animate = animate.IsChecked == true; }, null)) animate.IsChecked = journal.Settings.Animate; };
             stack.Children.Add(pin); stack.Children.Add(animate);
+            stack.Children.Add(UI.Label("APPEARANCE"));
+            var themeList = new ComboBox { MinHeight = 33 }; AutomationProperties.SetName(themeList, "Theme"); stack.Children.Add(themeList);
+            var themeInfo = UI.Text("", 11, "Muted"); themeInfo.Margin = new Thickness(0, 6, 0, 5); stack.Children.Add(themeInfo);
+            bool fillingThemes = false;
+            Action fillThemes = delegate
+            {
+                fillingThemes = true; themeList.Items.Clear();
+                var available = new System.Collections.Generic.List<ThemeSpec> { ThemeManager.Default }; available.AddRange(themes.Installed());
+                foreach (var option in available) themeList.Items.Add(new ComboBoxItem { Content = option.Name, Tag = option });
+                themeList.SelectedIndex = available.FindIndex(t => t.Id == journal.Settings.Theme);
+                themeInfo.Text = available.Any(t => t.Id == journal.Settings.Theme) ? ((ThemeSpec)((ComboBoxItem)themeList.SelectedItem).Tag).Description : "The selected theme file is missing. Default is showing until you install it again or choose another theme.";
+                fillingThemes = false;
+            };
+            fillThemes();
+            themeList.SelectionChanged += delegate
+            {
+                if (fillingThemes || themeList.SelectedItem == null) return;
+                var selected = (ThemeSpec)((ComboBoxItem)themeList.SelectedItem).Tag;
+                if (selected.Id == journal.Settings.Theme) return;
+                if (Change(delegate { journal.Settings.Theme = selected.Id; }, null))
+                {
+                    ThemeManager.Apply(selected); RefreshThemeChrome(); Render(null);
+                    themeInfo.Text = selected.Description;
+                }
+                else fillThemes();
+            };
+            var installTheme = UI.Button("Install theme file…", delegate
+            {
+                var picker = new OpenFileDialog { Filter = "WrenFeed theme (*.json)|*.json", CheckFileExists = true, Title = "Choose a WrenFeed theme" };
+                var suppliedThemes = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "themes");
+                if (Directory.Exists(suppliedThemes)) picker.InitialDirectory = suppliedThemes;
+                if (picker.ShowDialog(dialog) != true) return;
+                try
+                {
+                    var candidate = ThemeManager.Parse(File.ReadAllBytes(picker.FileName));
+                    var destination = Path.Combine(themes.Folder, candidate.Id + ".json");
+                    if (File.Exists(destination) && !String.Equals(Path.GetFullPath(picker.FileName), Path.GetFullPath(destination), StringComparison.OrdinalIgnoreCase) && MessageBox.Show(dialog, "Replace the installed “" + candidate.Name + "” theme file?", "Replace theme", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+                    var installed = themes.Install(picker.FileName);
+                    fillThemes();
+                    if (installed.Id == journal.Settings.Theme) { ThemeManager.Apply(installed); RefreshThemeChrome(); Render(null); themeInfo.Text = installed.Description; }
+                    foreach (ComboBoxItem item in themeList.Items) if (((ThemeSpec)item.Tag).Id == installed.Id) { themeList.SelectedItem = item; break; }
+                }
+                catch (Exception error) { MessageBox.Show(dialog, error.Message, "Theme install failed", MessageBoxButton.OK, MessageBoxImage.Warning); }
+            });
+            installTheme.Margin = new Thickness(0, 5, 0, 0); installTheme.HorizontalAlignment = HorizontalAlignment.Left; stack.Children.Add(installTheme);
+            var themeLocation = UI.Text("Optional theme files stay in " + themes.Folder, 10, "Muted"); themeLocation.TextWrapping = TextWrapping.Wrap; themeLocation.Margin = new Thickness(0, 6, 0, 0); stack.Children.Add(themeLocation);
             stack.Children.Add(UI.Label("DAILY RESET")); stack.Children.Add(UI.Text("Each quest can reset at local midnight, a fixed UTC time, or a chosen number of hours after completion. Progress saves immediately, and earlier completions remain in History.", 12, "Muted"));
             stack.Children.Add(UI.Label("WEEKLY RESET")); stack.Children.Add(UI.Text("Choose a fixed UTC day and time, or the same UTC weekday seven days after completion. Weekly completion history appears on the Weekly tab.", 12, "Muted"));
             stack.Children.Add(UI.Label("YOUR DATA")); stack.Children.Add(UI.Text("Stored only on this PC. No account or internet needed. A previous-save backup is kept automatically.", 12, "Muted"));
@@ -522,7 +613,7 @@ namespace DailyQuest
             var cancel = UI.Button("Cancel", delegate { DialogResult = false; }); cancel.Margin = new Thickness(0, 0, 8, 0); cancel.IsCancel = true; actions.Children.Add(cancel);
             var save = UI.Button("Save quest", Save); UI.Primary(save); save.IsDefault = true; actions.Children.Add(save); DockPanel.SetDock(actions, Dock.Bottom); root.Children.Add(actions);
             var stack = UI.Stack();
-            var title = UI.Text(game == null ? (weekly ? "A new weekly quest" : "A new daily quest") : "Refine your quest", 23, "Ink"); title.FontFamily = new FontFamily("Georgia"); stack.Children.Add(title);
+            var title = UI.Text(game == null ? (weekly ? "A new weekly quest" : "A new daily quest") : "Refine your quest", 23, "Ink"); UI.Display(title); stack.Children.Add(title);
             stack.Children.Add(UI.Label("QUEST NAME")); name = UI.Field(game == null ? "" : game.Name, "Quest name", 80); stack.Children.Add(name);
             stack.Children.Add(UI.Label("GAME GROUP  ·  OPTIONAL")); groupName = UI.Field(game == null ? group : game.GroupName, "Game group", 80); stack.Children.Add(groupName);
             var groupHint = UI.Text("Use the same group for related quests, such as OSRS. Each quest keeps its own reset and history.", 11, "Muted"); groupHint.Margin = new Thickness(0, 5, 0, 0); stack.Children.Add(groupHint);

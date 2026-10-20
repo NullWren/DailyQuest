@@ -7,6 +7,9 @@ New-Item -ItemType Directory -Path $installFolder -Force | Out-Null
 Copy-Item -LiteralPath $sourceExe -Destination $installedExe -Force
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'src\app.ico') -Destination (Join-Path $installFolder 'WrenFeed.ico') -Force
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'README.md') -Destination (Join-Path $installFolder 'README.md') -Force
+$themeFolder = Join-Path $installFolder 'themes'
+New-Item -ItemType Directory -Path $themeFolder -Force | Out-Null
+Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'themes') -File | Copy-Item -Destination $themeFolder -Force
 $desktopFolder = [Environment]::GetFolderPath('DesktopDirectory')
 $shortcutPath = Join-Path $desktopFolder 'WrenFeed.lnk'
 $shellObject = New-Object -ComObject WScript.Shell
