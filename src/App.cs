@@ -412,7 +412,7 @@ namespace DailyQuest
         }
         void Export(Window owner)
         {
-            var picker = new SaveFileDialog { Filter = "WrenFeed backup (*.json)|*.json", FileName = "DailyQuest-" + DateTime.Today.ToString("yyyy-MM-dd") + ".json", OverwritePrompt = true };
+            var picker = new SaveFileDialog { Filter = "WrenFeed backup (*.json)|*.json", FileName = "WrenFeed-" + DateTime.Today.ToString("yyyy-MM-dd") + ".json", OverwritePrompt = true };
             if (picker.ShowDialog(owner) != true) return;
             try
             {
