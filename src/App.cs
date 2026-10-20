@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
@@ -98,6 +99,7 @@ namespace DailyQuest
         readonly ThemeManager themes;
         Journal journal;
         readonly DockPanel root = new DockPanel();
+        readonly Border shell = new Border();
         readonly StackPanel cards = new StackPanel();
         readonly TextBlock heading = UI.Text("", 24, "Ink");
         readonly TextBlock summary = UI.Text("", 12, "Muted");
@@ -129,7 +131,10 @@ namespace DailyQuest
             Height = Math.Max(440, Math.Min(journal.Settings.Height, SystemParameters.WorkArea.Height - 35));
             MinWidth = 350; MinHeight = 440; WindowStartupLocation = WindowStartupLocation.CenterScreen;
             Topmost = journal.Settings.AlwaysOnTop;
-            root.Margin = new Thickness(20, 18, 20, 16); Content = root;
+            WindowStyle = WindowStyle.None; AllowsTransparency = true; Background = Brushes.Transparent;
+            BuildChrome();
+            ApplyWindowOpacity();
+            root.Margin = new Thickness(14, 12, 14, 10);
             var top = UI.Stack(); DockPanel.SetDock(top, Dock.Top); root.Children.Add(top);
             var masthead = new DockPanel();
             var settings = UI.Button("⚙", OpenSettings); settings.FontSize = 17; settings.Width = 34; settings.Padding = new Thickness(0); settings.ToolTip = "Settings (Ctrl+,)"; AutomationProperties.SetName(settings, "Settings");
@@ -170,6 +175,76 @@ namespace DailyQuest
             };
             Render(null);
             Loaded += delegate { if (storage.RecoveryNotice != null) MessageBox.Show(this, storage.RecoveryNotice, "Journal recovered", MessageBoxButton.OK, MessageBoxImage.Warning); };
+        }
+        void BuildChrome()
+        {
+            var frame = new Grid();
+            for (int i = 0; i < 3; i++)
+            {
+                frame.ColumnDefinitions.Add(new ColumnDefinition { Width = i == 1 ? new GridLength(1, GridUnitType.Star) : new GridLength(6) });
+                frame.RowDefinitions.Add(new RowDefinition { Height = i == 1 ? new GridLength(1, GridUnitType.Star) : new GridLength(6) });
+            }
+            shell.BorderBrush = UI.Brush("Edge"); shell.BorderThickness = new Thickness(1); shell.CornerRadius = new CornerRadius(8);
+            Grid.SetRowSpan(shell, 3); Grid.SetColumnSpan(shell, 3); frame.Children.Add(shell);
+            var body = new Grid(); body.RowDefinitions.Add(new RowDefinition { Height = new GridLength(33) }); body.RowDefinitions.Add(new RowDefinition());
+            Grid.SetRow(body, 1); Grid.SetColumn(body, 1); frame.Children.Add(body);
+            var titleBar = new DockPanel { Background = Brushes.Transparent, LastChildFill = true };
+            AutomationProperties.SetName(titleBar, "Move WrenFeed window");
+            titleBar.MouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
+            {
+                if (e.ClickCount == 2) return;
+                if (e.LeftButton == MouseButtonState.Pressed) DragMove();
+            };
+            var close = UI.Button("×", delegate { Close(); }); close.Width = 31; close.MinHeight = 27; close.Padding = new Thickness(0); close.ToolTip = "Close WrenFeed"; AutomationProperties.SetName(close, "Close WrenFeed");
+            DockPanel.SetDock(close, Dock.Right); titleBar.Children.Add(close);
+            var minimize = UI.Button("−", delegate { WindowState = WindowState.Minimized; }); minimize.Width = 31; minimize.MinHeight = 27; minimize.Padding = new Thickness(0); minimize.ToolTip = "Minimize WrenFeed"; AutomationProperties.SetName(minimize, "Minimize WrenFeed");
+            DockPanel.SetDock(minimize, Dock.Right); titleBar.Children.Add(minimize);
+            var label = UI.Text("✦  WrenFeed", 12, "Accent"); label.VerticalAlignment = VerticalAlignment.Center; label.Margin = new Thickness(5, 0, 0, 0); titleBar.Children.Add(label);
+            body.Children.Add(titleBar); Grid.SetRow(root, 1); body.Children.Add(root);
+            AddResizeHandle(frame, 0, 0, -1, -1); AddResizeHandle(frame, 0, 1, 0, -1); AddResizeHandle(frame, 0, 2, 1, -1);
+            AddResizeHandle(frame, 1, 0, -1, 0); AddResizeHandle(frame, 1, 2, 1, 0);
+            AddResizeHandle(frame, 2, 0, -1, 1); AddResizeHandle(frame, 2, 1, 0, 1); AddResizeHandle(frame, 2, 2, 1, 1);
+            Content = frame;
+        }
+        void AddResizeHandle(Grid frame, int row, int column, int horizontal, int vertical)
+        {
+            var thumb = new Thumb { Background = Brushes.Transparent, Cursor = horizontal == 0 ? Cursors.SizeNS : vertical == 0 ? Cursors.SizeWE : horizontal == vertical ? Cursors.SizeNWSE : Cursors.SizeNESW };
+            AutomationProperties.SetName(thumb, "Resize WrenFeed window");
+            thumb.DragDelta += delegate(object sender, DragDeltaEventArgs e)
+            {
+                if (WindowState != WindowState.Normal) return;
+                if (horizontal != 0)
+                {
+                    double change = horizontal < 0 ? -e.HorizontalChange : e.HorizontalChange;
+                    double width = Math.Max(MinWidth, Width + change);
+                    if (horizontal < 0) Left -= width - Width;
+                    Width = width;
+                }
+                if (vertical != 0)
+                {
+                    double change = vertical < 0 ? -e.VerticalChange : e.VerticalChange;
+                    double height = Math.Max(MinHeight, Height + change);
+                    if (vertical < 0) Top -= height - Height;
+                    Height = height;
+                }
+            };
+            Grid.SetRow(thumb, row); Grid.SetColumn(thumb, column); frame.Children.Add(thumb);
+        }
+        SolidColorBrush Surface(string key)
+        {
+            var brush = new SolidColorBrush(ThemeManager.Current.Colors[key]);
+            if (journal.Settings.BackgroundOnlyOpacity) brush.Opacity = journal.Settings.WindowOpacity;
+            return brush;
+        }
+        Border QuestCard(UIElement content)
+        {
+            var card = UI.Card(content); card.Background = Surface("Panel"); return card;
+        }
+        void ApplyWindowOpacity()
+        {
+            Opacity = journal.Settings.BackgroundOnlyOpacity ? 1.0 : journal.Settings.WindowOpacity;
+            shell.Background = Surface("Canvas");
+            foreach (var card in cards.Children.OfType<Border>()) card.Background = Surface("Panel");
         }
         bool RefreshDay()
         {
@@ -245,7 +320,7 @@ namespace DailyQuest
                 var title = UI.Text(history ? "No quests recorded" : "Every adventure starts small", 18, "Ink"); UI.Display(title); title.TextAlignment = TextAlignment.Center; title.Margin = new Thickness(0, 14, 0, 10); empty.Children.Add(title);
                 var copy = UI.Text(history ? "There is no saved checklist for this date. Days when the app was closed are not marked as completed." : "Add a game and the little daily tasks worth coming back for.", 13, "Muted"); copy.TextAlignment = TextAlignment.Center; empty.Children.Add(copy);
                 if (!history) { var add = UI.Button("+ Add your first game", delegate { EditGame(null); }); UI.Primary(add); add.Margin = new Thickness(0, 22, 0, 0); add.HorizontalAlignment = HorizontalAlignment.Center; empty.Children.Add(add); }
-                cards.Children.Add(UI.Card(empty));
+                cards.Children.Add(QuestCard(empty));
             }
             RenderQuestGroups(entries, flash);
             if (!history && entries.Count > 0 && done == entries.Count)
@@ -269,7 +344,7 @@ namespace DailyQuest
                 var title = UI.Text("A new weekly adventure", 18, "Ink"); UI.Display(title); title.TextAlignment = TextAlignment.Center; empty.Children.Add(title);
                 var copy = UI.Text("Add a weekly game and choose when its quest resets.", 13, "Muted"); copy.Margin = new Thickness(0, 10, 0, 16); copy.TextAlignment = TextAlignment.Center; empty.Children.Add(copy);
                 var add = UI.Button("+ Add a weekly game", delegate { EditGame(null); }); UI.Primary(add); add.HorizontalAlignment = HorizontalAlignment.Center; empty.Children.Add(add);
-                cards.Children.Add(UI.Card(empty));
+                cards.Children.Add(QuestCard(empty));
             }
             RenderQuestGroups(entries.Select(e => e.Record.Result).ToList(), flash);
             var past = journal.WeeklyRecords.Where(r => r.Result.Done && !entries.Any(e => e.Record.Id == r.Id)).OrderByDescending(r => r.Result.CompletedUtc).Take(8).ToList();
@@ -306,7 +381,7 @@ namespace DailyQuest
                     if (i > 0) content.Children.Add(new Border { BorderBrush = UI.Brush("Edge"), BorderThickness = new Thickness(0, 1, 0, 0), Margin = new Thickness(0, 11, 0, 11) });
                     content.Children.Add(GameRow(members[i]));
                 }
-                var card = UI.Card(content); card.Margin = new Thickness(0, 0, 0, 10);
+                var card = QuestCard(content); card.Margin = new Thickness(0, 0, 0, 10);
                 if (members.All(m => m.Done)) card.BorderBrush = CompletedBorder();
                 if (members.Any(m => m.Id == flash)) Flash(card);
                 cards.Children.Add(card);
@@ -320,7 +395,7 @@ namespace DailyQuest
         }
         Border GameCard(GameResult game, bool flash)
         {
-            var card = UI.Card(GameRow(game)); card.Margin = new Thickness(0, 0, 0, 10);
+            var card = QuestCard(GameRow(game)); card.Margin = new Thickness(0, 0, 0, 10);
             if (game.Done) card.BorderBrush = CompletedBorder();
             if (flash) Flash(card);
             return card;
@@ -438,6 +513,33 @@ namespace DailyQuest
             var animate = new CheckBox { Content = "Subtle completion animations", IsChecked = journal.Settings.Animate };
             animate.Click += delegate { if (!Change(delegate { journal.Settings.Animate = animate.IsChecked == true; }, null)) animate.IsChecked = journal.Settings.Animate; };
             stack.Children.Add(pin); stack.Children.Add(animate);
+            stack.Children.Add(UI.Label("WINDOW VISIBILITY"));
+            var wholeWindow = new RadioButton { Content = "Fade everything", GroupName = "OpacityMode", IsChecked = !journal.Settings.BackgroundOnlyOpacity, Margin = new Thickness(0, 0, 0, 5) };
+            var backgroundOnly = new RadioButton { Content = "Fade backgrounds only · keep text clear", GroupName = "OpacityMode", IsChecked = journal.Settings.BackgroundOnlyOpacity, Margin = new Thickness(0, 0, 0, 7) };
+            AutomationProperties.SetName(wholeWindow, "Fade whole window"); AutomationProperties.SetName(backgroundOnly, "Fade backgrounds only");
+            stack.Children.Add(wholeWindow); stack.Children.Add(backgroundOnly);
+            bool resettingMode = false;
+            Action<bool> chooseMode = delegate(bool background)
+            {
+                if (resettingMode || journal.Settings.BackgroundOnlyOpacity == background) return;
+                if (Change(delegate { journal.Settings.BackgroundOnlyOpacity = background; }, null)) ApplyWindowOpacity();
+                else { resettingMode = true; wholeWindow.IsChecked = !journal.Settings.BackgroundOnlyOpacity; backgroundOnly.IsChecked = journal.Settings.BackgroundOnlyOpacity; resettingMode = false; }
+            };
+            wholeWindow.Checked += delegate { chooseMode(false); };
+            backgroundOnly.Checked += delegate { chooseMode(true); };
+            var opacityLabel = UI.Text("Window visibility · " + Math.Round(journal.Settings.WindowOpacity * 100) + "%", 12, "Muted"); stack.Children.Add(opacityLabel);
+            var opacitySlider = new Slider { Minimum = 60, Maximum = 100, Value = Math.Round(journal.Settings.WindowOpacity * 100), TickFrequency = 5, IsSnapToTickEnabled = true, SmallChange = 5, LargeChange = 10, Margin = new Thickness(0, 5, 0, 0) };
+            AutomationProperties.SetName(opacitySlider, "Window opacity"); stack.Children.Add(opacitySlider);
+            var opacityHint = UI.Text("At 100% the window is solid. Backgrounds only keeps text clear; small buttons stay solid so they remain easy to use.", 11, "Muted"); opacityHint.Margin = new Thickness(0, 4, 0, 2); stack.Children.Add(opacityHint);
+            bool resettingOpacity = false;
+            opacitySlider.ValueChanged += delegate
+            {
+                if (resettingOpacity) return;
+                double value = opacitySlider.Value / 100.0;
+                if (Math.Abs(value - journal.Settings.WindowOpacity) < 0.001) return;
+                if (Change(delegate { journal.Settings.WindowOpacity = value; }, null)) { ApplyWindowOpacity(); opacityLabel.Text = "Window visibility · " + Math.Round(value * 100) + "%"; }
+                else { resettingOpacity = true; opacitySlider.Value = journal.Settings.WindowOpacity * 100; resettingOpacity = false; }
+            };
             stack.Children.Add(UI.Label("APPEARANCE"));
             var themeList = new ComboBox { MinHeight = 33 }; AutomationProperties.SetName(themeList, "Theme"); stack.Children.Add(themeList);
             var themeInfo = UI.Text("", 11, "Muted"); themeInfo.Margin = new Thickness(0, 6, 0, 5); stack.Children.Add(themeInfo);
@@ -459,7 +561,7 @@ namespace DailyQuest
                 if (selected.Id == journal.Settings.Theme) return;
                 if (Change(delegate { journal.Settings.Theme = selected.Id; }, null))
                 {
-                    ThemeManager.Apply(selected); RefreshThemeChrome(); Render(null);
+                    ThemeManager.Apply(selected); RefreshThemeChrome(); Render(null); ApplyWindowOpacity();
                     themeInfo.Text = selected.Description;
                 }
                 else fillThemes();
@@ -477,7 +579,7 @@ namespace DailyQuest
                     if (File.Exists(destination) && !String.Equals(Path.GetFullPath(picker.FileName), Path.GetFullPath(destination), StringComparison.OrdinalIgnoreCase) && MessageBox.Show(dialog, "Replace the installed “" + candidate.Name + "” theme file?", "Replace theme", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
                     var installed = themes.Install(picker.FileName);
                     fillThemes();
-                    if (installed.Id == journal.Settings.Theme) { ThemeManager.Apply(installed); RefreshThemeChrome(); Render(null); themeInfo.Text = installed.Description; }
+                    if (installed.Id == journal.Settings.Theme) { ThemeManager.Apply(installed); RefreshThemeChrome(); Render(null); ApplyWindowOpacity(); themeInfo.Text = installed.Description; }
                     foreach (ComboBoxItem item in themeList.Items) if (((ThemeSpec)item.Tag).Id == installed.Id) { themeList.SelectedItem = item; break; }
                 }
                 catch (Exception error) { MessageBox.Show(dialog, error.Message, "Theme install failed", MessageBoxButton.OK, MessageBoxImage.Warning); }
@@ -578,7 +680,7 @@ namespace DailyQuest
                 var restored = Storage.Decode(File.ReadAllBytes(picker.FileName));
                 if (MessageBox.Show(owner, "Replace your current journal with this backup?\n\n" + restored.Games.Count(g => !g.Archived) + " daily games · " + restored.WeeklyGames.Count(g => !g.Archived) + " weekly games · " + restored.Days.Count + " recorded days\n\nA separate copy of your current journal will be kept in the data folder.", "Restore backup", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
                 File.WriteAllBytes(Path.Combine(storage.Folder, "before-restore-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-ffff") + ".json"), Storage.Encode(journal));
-                if (Change(delegate { journal = restored; journal.Today(DateTime.Now); foreach (var game in journal.Games.Where(g => !g.Archived && g.DailyReset != "local")) journal.CurrentTimedDaily(game, DateTime.UtcNow); foreach (var game in journal.WeeklyGames.Where(g => !g.Archived)) journal.CurrentWeekly(game, DateTime.UtcNow); }, null)) { Topmost = journal.Settings.AlwaysOnTop; owner.Close(); }
+                if (Change(delegate { journal = restored; journal.Today(DateTime.Now); foreach (var game in journal.Games.Where(g => !g.Archived && g.DailyReset != "local")) journal.CurrentTimedDaily(game, DateTime.UtcNow); foreach (var game in journal.WeeklyGames.Where(g => !g.Archived)) journal.CurrentWeekly(game, DateTime.UtcNow); }, null)) { Topmost = journal.Settings.AlwaysOnTop; ApplyWindowOpacity(); owner.Close(); }
             } catch (Exception e) { MessageBox.Show(owner, e.Message, "Restore failed"); }
         }
     }

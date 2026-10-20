@@ -7,6 +7,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -65,12 +66,25 @@ class ThemeTests
             Assert(manager.Find("not-installed").Id == ThemeManager.DefaultId, "Missing optional theme falls back to Default");
             var journal = new Journal(); journal.SaveGame(new Game { Name = "Theme test quest" }, DateTime.Now, DateTime.UtcNow);
             var window = new QuestWindow(storage, journal) { Opacity = 0, ShowActivated = false }; window.Show();
+            Assert(window.WindowStyle == WindowStyle.None && window.AllowsTransparency && Walk(window).OfType<Thumb>().Count() == 8 && Walk(window).OfType<Button>().Any(b => AutomationProperties.GetName(b) == "Close WrenFeed"), "Custom quest-log title bar keeps close and edge-resize controls");
+            double previousWidth = window.Width;
+            var rightGrip = Walk(window).OfType<Thumb>().Single(t => Grid.GetRow(t) == 1 && Grid.GetColumn(t) == 2);
+            rightGrip.RaiseEvent(new DragDeltaEventArgs(20, 0) { RoutedEvent = Thumb.DragDeltaEvent });
+            Assert(Math.Abs(window.Width - previousWidth - 20) < 0.001, "Right edge grip resizes the custom window");
             Exception failure = null;
             app.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(delegate
             {
                 try
                 {
                     var dialog = app.Windows.Cast<Window>().Single(w => w.Title == "WrenFeed · Settings");
+                    var opacity = Walk(dialog).OfType<Slider>().Single(s => AutomationProperties.GetName(s) == "Window opacity");
+                    opacity.Value = 80;
+                    Assert(Math.Abs(window.Opacity - 0.8) < 0.001 && Math.Abs(journal.Settings.WindowOpacity - 0.8) < 0.001, "Whole-window visibility slider applies and saves immediately");
+                    var backgroundMode = Walk(dialog).OfType<RadioButton>().Single(r => AutomationProperties.GetName(r) == "Fade backgrounds only");
+                    backgroundMode.IsChecked = true;
+                    Assert(journal.Settings.BackgroundOnlyOpacity && window.Opacity == 1, "Background-only mode keeps quest text at full opacity");
+                    Assert(Walk(window).OfType<Border>().Any(b => b.Background is SolidColorBrush && ((SolidColorBrush)b.Background).Color == ThemeManager.Current.Colors["Panel"] && Math.Abs(((SolidColorBrush)b.Background).Opacity - 0.8) < 0.001), "Background-only mode fades quest cards");
+                    opacity.Value = 100;
                     var list = Walk(dialog).OfType<ComboBox>().Single(c => AutomationProperties.GetName(c) == "Theme");
                     list.SelectedItem = list.Items.Cast<ComboBoxItem>().Single(i => ((ThemeSpec)i.Tag).Id == "adventurers-ledger");
                     Assert(journal.Settings.Theme == "adventurers-ledger" && ThemeManager.Current.Id == "adventurers-ledger", "Settings saves and applies selected theme immediately");
@@ -87,7 +101,8 @@ class ThemeTests
             var settings = Walk(window).OfType<Button>().Single(b => AutomationProperties.GetName(b) == "Settings");
             settings.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             if (failure != null) throw failure;
-            Assert(journal.Games.Count == 1 && Storage.Decode(File.ReadAllBytes(storage.DataPath)).Settings.Theme == ThemeManager.DefaultId, "Theme switching leaves quest data intact and persists selection");
+            var saved = Storage.Decode(File.ReadAllBytes(storage.DataPath));
+            Assert(journal.Games.Count == 1 && saved.Settings.Theme == ThemeManager.DefaultId && saved.Settings.BackgroundOnlyOpacity && saved.Settings.WindowOpacity == 1, "Theme and visibility switching leave quest data intact and persist selection");
             window.Close();
         }
         string valid = File.ReadAllText(args[2]);

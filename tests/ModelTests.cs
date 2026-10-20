@@ -145,6 +145,14 @@ class ModelTests
         var legacyGrouped = new Journal { Version = 3 }; legacyGrouped.Games.Add(new Game { Name = "Old daily", DailyIntervalHours = 0 });
         var migratedGrouped = Storage.Decode(Storage.Encode(legacyGrouped));
         Assert(migratedGrouped.Version == 4 && migratedGrouped.Games[0].DailyIntervalHours == 24, "Version 3 journal gains a safe 24-hour default");
+        var oldVisibility = new Journal(); oldVisibility.Settings.WindowOpacity = 0;
+        Assert(Storage.Decode(Storage.Encode(oldVisibility)).Settings.WindowOpacity == 1, "Older journals gain fully opaque window default");
+        var customVisibility = new Journal(); customVisibility.Settings.WindowOpacity = 0.7; customVisibility.Settings.BackgroundOnlyOpacity = true;
+        var savedVisibility = Storage.Decode(Storage.Encode(customVisibility));
+        Assert(Math.Abs(savedVisibility.Settings.WindowOpacity - 0.7) < 0.001 && savedVisibility.Settings.BackgroundOnlyOpacity, "Background-only visibility choice survives JSON round trip");
+        customVisibility.Settings.WindowOpacity = 0.2;
+        bool refusedVisibility = false; try { Storage.Decode(Storage.Encode(customVisibility)); } catch (InvalidDataException) { refusedVisibility = true; }
+        Assert(refusedVisibility, "Unusable window visibility is rejected");
         bool refused = false; cloned.Version = 99; try { Storage.Decode(Storage.Encode(cloned)); } catch (InvalidDataException) { refused = true; }
         Assert(refused, "Future schema versions are refused without overwrite");
         using (var store = new Storage(root))
