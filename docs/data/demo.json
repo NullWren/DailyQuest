@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "updatedAt": null,
+  "players": [
+    {"name":"Wren","tag":"early bird","color":"#b5d6bd","games":[{"key":"osrs","name":"Old School RuneScape","daily":32,"weekly":8},{"key":"warframe","name":"Warframe","daily":24,"weekly":5}]},
+    {"name":"G-Unit","tag":"steady adventurer","color":"#e2bc8b","games":[{"key":"osrs","name":"Old School RuneScape","daily":27,"weekly":6},{"key":"warframe","name":"Warframe","daily":18,"weekly":4}]},
+    {"name":"Moth","tag":"night owl","color":"#c7b7db","games":[{"key":"warframe","name":"Warframe","daily":26,"weekly":7}]},
+    {"name":"Sable","tag":"quest collector","color":"#9fc7d5","games":[{"key":"osrs","name":"Old School RuneScape","daily":21,"weekly":5}]},
+    {"name":"Ember","tag":"one quest at a time","color":"#e5b29f","games":[{"key":"osrs","name":"Old School RuneScape","daily":13,"weekly":3},{"key":"warframe","name":"Warframe","daily":5,"weekly":1}]}
+  ]
+}
