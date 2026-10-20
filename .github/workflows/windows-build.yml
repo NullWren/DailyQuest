@@ -31,6 +31,6 @@ jobs:
       - name: Save Windows ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: DailyQuest-Windows
-          path: release/DailyQuest.zip
+          name: WrenFeed-Windows
+          path: release/WrenFeed.zip
           if-no-files-found: error

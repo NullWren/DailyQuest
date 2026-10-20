@@ -290,7 +290,7 @@ namespace DailyQuest
         {
             Folder = Path.GetFullPath(folder); Directory.CreateDirectory(Folder);
             try { instanceLock = new FileStream(Path.Combine(Folder, "journal.lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None); }
-            catch (IOException) { throw new IOException("Daily Quest is already open, or its data folder is locked. Close the other window and try again."); }
+            catch (IOException) { throw new IOException("WrenFeed is already open, or its data folder is locked. Close the other window and try again."); }
         }
         public static byte[] Encode(Journal journal)
         {

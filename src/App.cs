@@ -29,12 +29,12 @@ namespace DailyQuest
                 using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("DailyQuest.Theme.xaml")) app.Resources = (ResourceDictionary)XamlReader.Load(stream);
                 app.DispatcherUnhandledException += delegate(object sender, DispatcherUnhandledExceptionEventArgs e)
                 {
-                    MessageBox.Show("The action could not be completed.\n\n" + e.Exception.Message, "Daily Quest", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("The action could not be completed.\n\n" + e.Exception.Message, "WrenFeed", MessageBoxButton.OK, MessageBoxImage.Error);
                     e.Handled = true;
                 };
                 app.Run(new QuestWindow(storage, journal));
             }
-            catch (Exception error) { MessageBox.Show(error.Message, "Daily Quest could not open", MessageBoxButton.OK, MessageBoxImage.Warning); }
+            catch (Exception error) { MessageBox.Show(error.Message, "WrenFeed could not open", MessageBoxButton.OK, MessageBoxImage.Warning); }
             finally { if (storage != null) storage.Dispose(); }
         }
     }
@@ -93,7 +93,7 @@ namespace DailyQuest
         {
             SetResourceReference(FrameworkElement.StyleProperty, typeof(Window));
             this.storage = storage; this.journal = journal;
-            Title = "Daily Quest";
+            Title = "WrenFeed";
             Width = Math.Max(350, Math.Min(journal.Settings.Width, SystemParameters.WorkArea.Width));
             Height = Math.Max(440, Math.Min(journal.Settings.Height, SystemParameters.WorkArea.Height - 35));
             MinWidth = 350; MinHeight = 440; WindowStartupLocation = WindowStartupLocation.CenterScreen;
@@ -103,7 +103,7 @@ namespace DailyQuest
             var masthead = new DockPanel();
             var settings = UI.Button("⚙", OpenSettings); settings.FontSize = 17; settings.Width = 34; settings.Padding = new Thickness(0); settings.ToolTip = "Settings (Ctrl+,)"; AutomationProperties.SetName(settings, "Settings");
             DockPanel.SetDock(settings, Dock.Right); masthead.Children.Add(settings);
-            var brand = UI.Text("◇  D A I L Y  Q U E S T", 11, "Accent"); brand.VerticalAlignment = VerticalAlignment.Center; masthead.Children.Add(brand); top.Children.Add(masthead);
+            var brand = UI.Text("◇  W R E N F E E D", 11, "Accent"); brand.VerticalAlignment = VerticalAlignment.Center; masthead.Children.Add(brand); top.Children.Add(masthead);
             heading.FontFamily = new FontFamily("Georgia"); heading.Margin = new Thickness(0, 17, 0, 6); top.Children.Add(heading);
             summary.Margin = new Thickness(0, 0, 0, 12); top.Children.Add(summary);
             track.Background = UI.Brush("Edge"); fill.Background = UI.Brush("Accent"); track.Child = fill; top.Children.Add(track); track.SizeChanged += delegate { fill.Width = Math.Max(0, track.ActualWidth * fraction); };
@@ -125,7 +125,7 @@ namespace DailyQuest
             {
                 clock.Stop();
                 try { if (WindowState == WindowState.Normal) { journal.Settings.Width = Width; journal.Settings.Height = Height; } storage.Save(journal); }
-                catch (Exception e) { MessageBox.Show(this, "Could not save window preferences. Previously saved progress is still on disk.\n\n" + e.Message, "Daily Quest"); }
+                catch (Exception e) { MessageBox.Show(this, "Could not save window preferences. Previously saved progress is still on disk.\n\n" + e.Message, "WrenFeed"); }
             };
             PreviewKeyDown += delegate(object sender, KeyEventArgs e)
             {
@@ -370,7 +370,7 @@ namespace DailyQuest
         }
         void OpenSettings()
         {
-            var dialog = new Window(); UI.SetupDialog(dialog, this, "Daily Quest · Settings", 450, 580);
+            var dialog = new Window(); UI.SetupDialog(dialog, this, "WrenFeed · Settings", 450, 580);
             var stack = UI.Stack(); stack.Margin = new Thickness(24);
             var title = UI.Text("Make yourself at home", 22, "Ink"); title.FontFamily = new FontFamily("Georgia"); stack.Children.Add(title);
             var intro = UI.Text("A quiet little companion for your daily games.", 12, "Muted"); intro.Margin = new Thickness(0, 8, 0, 20); stack.Children.Add(intro);
@@ -412,7 +412,7 @@ namespace DailyQuest
         }
         void Export(Window owner)
         {
-            var picker = new SaveFileDialog { Filter = "Daily Quest backup (*.json)|*.json", FileName = "DailyQuest-" + DateTime.Today.ToString("yyyy-MM-dd") + ".json", OverwritePrompt = true };
+            var picker = new SaveFileDialog { Filter = "WrenFeed backup (*.json)|*.json", FileName = "DailyQuest-" + DateTime.Today.ToString("yyyy-MM-dd") + ".json", OverwritePrompt = true };
             if (picker.ShowDialog(owner) != true) return;
             try
             {
@@ -426,7 +426,7 @@ namespace DailyQuest
         }
         void Import(Window owner)
         {
-            var picker = new OpenFileDialog { Filter = "Daily Quest backup (*.json)|*.json", CheckFileExists = true };
+            var picker = new OpenFileDialog { Filter = "WrenFeed backup (*.json)|*.json", CheckFileExists = true };
             if (picker.ShowDialog(owner) != true) return;
             try
             {
@@ -460,7 +460,7 @@ namespace DailyQuest
         {
             isWeekly = weekly;
             gameId = game == null ? Guid.NewGuid().ToString("N") : game.Id;
-            UI.SetupDialog(this, owner, game == null ? "Daily Quest · Add quest" : "Daily Quest · Edit quest", 510, weekly ? 760 : 730);
+            UI.SetupDialog(this, owner, game == null ? "WrenFeed · Add quest" : "WrenFeed · Edit quest", 510, weekly ? 760 : 730);
             var root = new DockPanel { Margin = new Thickness(24) }; Content = root;
             var actions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 18, 0, 0) };
             var cancel = UI.Button("Cancel", delegate { DialogResult = false; }); cancel.Margin = new Thickness(0, 0, 8, 0); cancel.IsCancel = true; actions.Children.Add(cancel);

@@ -5,10 +5,10 @@ $compilerPath = Join-Path $frameworkPath 'csc.exe'
 $outputPath = Join-Path $projectPath 'build'
 New-Item -ItemType Directory -Path $outputPath -Force | Out-Null
 $references = @('System.dll','System.Core.dll','System.Runtime.Serialization.dll','System.Xml.dll','System.Xaml.dll','WPF\WindowsBase.dll','WPF\PresentationCore.dll','WPF\PresentationFramework.dll')
-$compilerArgs = @('/nologo','/target:winexe','/optimize+','/utf8output',('/out:' + (Join-Path $outputPath 'DailyQuest.exe')),('/win32icon:' + (Join-Path $projectPath 'src\app.ico')),('/resource:' + (Join-Path $projectPath 'src\Theme.xaml') + ',DailyQuest.Theme.xaml'))
+$compilerArgs = @('/nologo','/target:winexe','/optimize+','/utf8output',('/out:' + (Join-Path $outputPath 'WrenFeed.exe')),('/win32icon:' + (Join-Path $projectPath 'src\app.ico')),('/resource:' + (Join-Path $projectPath 'src\Theme.xaml') + ',DailyQuest.Theme.xaml'))
 foreach ($reference in $references) { $compilerArgs += '/reference:' + (Join-Path $frameworkPath $reference) }
 $compilerArgs += (Join-Path $projectPath 'src\Model.cs')
 $compilerArgs += (Join-Path $projectPath 'src\App.cs')
 & $compilerPath @compilerArgs
-if ($LASTEXITCODE -ne 0) { throw 'Daily Quest compilation failed.' }
-Write-Output ('Built ' + (Join-Path $outputPath 'DailyQuest.exe'))
+if ($LASTEXITCODE -ne 0) { throw 'WrenFeed compilation failed.' }
+Write-Output ('Built ' + (Join-Path $outputPath 'WrenFeed.exe'))
