@@ -4,6 +4,12 @@ The WrenFeed desktop app remains offline until someone explicitly presses **Sett
 
 [GitHub Pages](https://nullwren.github.io/WrenFeed/) remains the public website. A small Cloudflare Worker receives uploads and stores the latest tally for each invited person in D1. The page requests public standings from that Worker. The Worker and database must be deployed before uploads work; [`docs/data/service.json`](../docs/data/service.json) has a `null` endpoint until then. Demo players appear only while no real players exist.
 
+## Cost and security
+
+Check **Workers & Pages → Plans** in your Cloudflare dashboard and keep **Workers Free** selected. As of October 2026, that plan includes [100,000 Worker requests per day](https://developers.cloudflare.com/workers/platform/limits/) and [5 million D1 rows read, 100,000 rows written per day, and 5 GB stored](https://developers.cloudflare.com/d1/platform/pricing/). This small friends leaderboard should fit comfortably, but usage is shared with other Workers/D1 projects on the same account. On the Free plan, exceeding the limits makes requests or queries fail until the allowance resets; it does not silently upgrade you to a paid plan. A Workers Paid plan has different billing, so check the plan before deploying.
+
+Uploads use HTTPS and require a separate 32-byte random invite code per person. Only a SHA-256 hash of each code is stored in D1, and Cloudflare [encrypts D1 data at rest and in transit](https://developers.cloudflare.com/d1/reference/data-security/). The public endpoint returns nicknames and totals only. Keep invite codes private, revoke one if it leaks, and [enable two-factor authentication](https://developers.cloudflare.com/fundamentals/user-profiles/2fa/) on your Cloudflare account. Anyone holding a valid code can replace that person's tally; scores are self-reported and are not independently verified.
+
 ## Deploy the receiver
 
 This is a one-time task for the leaderboard owner. Friends do not need Cloudflare accounts. Use a Cloudflare account with Workers and D1 enabled, plus Node.js so `npx` can run Wrangler. Cloudflare's [D1 setup guide](https://developers.cloudflare.com/d1/get-started/) covers the account and database setup.
@@ -21,3 +27,4 @@ The Worker accepts one full tally per upload and replaces that person's previous
 ## Checks
 
 From the repository root, run `node --test leaderboard/worker/test.mjs` for receiver validation and `./test-leaderboard.ps1` on Windows for the desktop tally and encrypted invite storage. These use local test data and do not contact Cloudflare.
+
