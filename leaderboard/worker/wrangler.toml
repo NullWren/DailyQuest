@@ -5,5 +5,5 @@ compatibility_date = "2026-10-19"
 [[d1_databases]]
 binding = "DB"
 database_name = "wrenfeed-leaderboard"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "fc53a1de-3aab-4460-ae17-3868972cd1b3"
 migrations_dir = "migrations"
