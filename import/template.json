@@ -1,0 +1,49 @@
+{
+  "format": "wrenfeed-quests",
+  "version": 1,
+  "quests": [
+    {
+      "frequency": "daily",
+      "game": "Example game",
+      "name": "Daily task at local midnight",
+      "description": "A short description of what to do.",
+      "reset": { "type": "local-midnight" },
+      "lines": [
+        { "text": "A subtask with its own checkbox", "checkbox": true },
+        { "text": "An extra note without a checkbox", "checkbox": false }
+      ]
+    },
+    {
+      "frequency": "daily",
+      "game": "Example game",
+      "name": "Daily task at a server reset",
+      "description": "Replace this example with your own task.",
+      "reset": { "type": "fixed-utc", "timeUtc": "00:00" },
+      "lines": []
+    },
+    {
+      "frequency": "daily",
+      "game": "Example game",
+      "name": "Daily task after completion",
+      "description": "Start a timer by completing this quest.",
+      "reset": { "type": "hours-after-completion", "hours": 23 },
+      "lines": []
+    },
+    {
+      "frequency": "weekly",
+      "game": "Example game",
+      "name": "Weekly task at a fixed reset",
+      "description": "Replace this example with your own task.",
+      "reset": { "type": "fixed-utc", "weekdayUtc": "Monday", "timeUtc": "00:00" },
+      "lines": []
+    },
+    {
+      "frequency": "weekly",
+      "game": "Example game",
+      "name": "Weekly task after completion",
+      "description": "Available at 00:00 UTC on the same weekday next week.",
+      "reset": { "type": "seven-days-after-completion" },
+      "lines": []
+    }
+  ]
+}

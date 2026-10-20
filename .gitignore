@@ -1,6 +1,7 @@
 build/test-*/
 build/ModelTests.exe
 build/EditorTests.exe
+build/ImportTests.exe
 build/DailyQuest.exe
 build/WrenFeed.exe
 release/DailyQuest/

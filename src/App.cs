@@ -397,6 +397,7 @@ namespace DailyQuest
             stack.Children.Add(UI.Label("WEEKLY RESET")); stack.Children.Add(UI.Text("Choose a fixed UTC day and time, or the same UTC weekday seven days after completion. Weekly completion history appears on the Weekly tab.", 12, "Muted"));
             stack.Children.Add(UI.Label("YOUR DATA")); stack.Children.Add(UI.Text("Stored only on this PC. No account or internet needed. A previous-save backup is kept automatically.", 12, "Muted"));
             var buttons = new WrapPanel { Margin = new Thickness(0, 12, 0, 0) };
+            var questImport = UI.Button("Import quests", delegate { ImportQuests(dialog); }); questImport.Margin = new Thickness(0, 0, 8, 8); buttons.Children.Add(questImport);
             var export = UI.Button("Export backup", delegate { Export(dialog); }); export.Margin = new Thickness(0, 0, 8, 8); buttons.Children.Add(export);
             var import = UI.Button("Restore backup", delegate { Import(dialog); }); import.Margin = new Thickness(0, 0, 0, 8); buttons.Children.Add(import); stack.Children.Add(buttons);
             var location = UI.Text(storage.DataPath, 10, "Muted"); location.TextWrapping = TextWrapping.Wrap; stack.Children.Add(location);
@@ -437,6 +438,45 @@ namespace DailyQuest
         bool IsLiveFile(string path)
         {
             return String.Equals(Path.GetFullPath(path), storage.DataPath, StringComparison.OrdinalIgnoreCase) || String.Equals(Path.GetFullPath(path), storage.BackupPath, StringComparison.OrdinalIgnoreCase);
+        }
+        void ImportQuests(Window owner)
+        {
+            var picker = new OpenFileDialog { Filter = "WrenFeed quest list (*.json)|*.json", CheckFileExists = true, Title = "Choose a WrenFeed quest list" };
+            if (picker.ShowDialog(owner) != true) return;
+            try
+            {
+                var plan = QuestImportPlan.Create(journal, QuestImport.Parse(File.ReadAllBytes(picker.FileName)));
+                var preview = new Window(); UI.SetupDialog(preview, owner, "WrenFeed · Import quests", 510, 560);
+                var layout = new DockPanel { Margin = new Thickness(22) }; preview.Content = layout;
+                var summaryText = UI.Text(plan.ToAdd.Count + " quests to add · " + plan.Skipped.Count + " duplicates to skip", 17, "Ink");
+                summaryText.Margin = new Thickness(0, 0, 0, 12); DockPanel.SetDock(summaryText, Dock.Top); layout.Children.Add(summaryText);
+                var actions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 14, 0, 0) };
+                var cancel = UI.Button("Cancel", delegate { preview.DialogResult = false; }); cancel.IsCancel = true; cancel.Margin = new Thickness(0, 0, 8, 0); actions.Children.Add(cancel);
+                var add = UI.Button("Add quests", delegate { preview.DialogResult = true; }); add.IsEnabled = plan.ToAdd.Count > 0; UI.Primary(add); actions.Children.Add(add);
+                DockPanel.SetDock(actions, Dock.Bottom); layout.Children.Add(actions);
+                var details = UI.Stack();
+                foreach (var entry in plan.ToAdd)
+                {
+                    var label = UI.Text((entry.Weekly ? "Weekly" : "Daily") + " · " + (String.IsNullOrEmpty(entry.Game.GroupName) ? "Ungrouped" : entry.Game.GroupName) + " · " + entry.Game.Name, 13, "Ink");
+                    label.Margin = new Thickness(0, 0, 0, 9); details.Children.Add(label);
+                }
+                foreach (var entry in plan.Skipped)
+                {
+                    var label = UI.Text("Skip duplicate · " + (entry.Weekly ? "Weekly" : "Daily") + " · " + (String.IsNullOrEmpty(entry.Game.GroupName) ? "Ungrouped" : entry.Game.GroupName) + " · " + entry.Game.Name, 12, "Muted");
+                    label.Margin = new Thickness(0, 0, 0, 9); details.Children.Add(label);
+                }
+                layout.Children.Add(new ScrollViewer { Content = details, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+                if (preview.ShowDialog() != true) return;
+                if (Change(delegate { plan.Apply(journal, DateTime.Now, DateTime.UtcNow); }, null))
+                {
+                    history = false;
+                    weekly = plan.ToAdd.All(q => q.Weekly);
+                    Render(null);
+                    owner.Close();
+                    MessageBox.Show(this, "Added " + plan.ToAdd.Count + " quests. Skipped " + plan.Skipped.Count + " duplicates.", "Quests imported");
+                }
+            }
+            catch (Exception e) { MessageBox.Show(owner, e.Message, "Quest import failed", MessageBoxButton.OK, MessageBoxImage.Warning); }
         }
         void Import(Window owner)
         {

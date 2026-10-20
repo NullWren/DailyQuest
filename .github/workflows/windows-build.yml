@@ -20,6 +20,10 @@ jobs:
         shell: pwsh
         run: ./test.ps1
 
+      - name: Test quest imports
+        shell: pwsh
+        run: ./test-import.ps1
+
       - name: Test WPF editor and weekly tab
         shell: pwsh
         run: ./test-editor.ps1
