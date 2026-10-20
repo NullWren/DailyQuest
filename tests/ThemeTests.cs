@@ -51,8 +51,9 @@ class ThemeTests
         Assert(neon.Id == "neon-aviary" && neon.Decoration == "circuit" && neon.DisplayFont == "Consolas", "Neon theme parses circuit look and display font");
         Assert(ledger.Id == "adventurers-ledger" && ledger.Decoration == "filigree" && ledger.Mascot == "wren", "Ledger theme enables ornate cards and small wren");
         Assert(template.Id == "my-theme" && template.Decoration == "none", "Repository theme template is valid");
-        Assert(additions.Select(t => t.Id).SequenceEqual(new[] { "anime-noir", "g-units", "sphynx-nook", "pixel-perch", "anime-graffiti", "the-flock" }), "Six additional theme presets parse and use distinct IDs");
-        Assert(additions[0].Mascot == "manga-eye" && additions[1].Mascot == "chain-wren" && additions[2].Mascot == "sphynx" && additions[3].Mascot == "pixel-wren" && additions[4].Mascot == "graffiti-wing" && additions[5].Mascot == "flock", "New themes select original built-in emblems");
+        Assert(additions.Select(t => t.Id).SequenceEqual(new[] { "anime-noir", "g-units", "sphynx-nook", "pixel-perch", "anime-graffiti", "the-flock", "manga-sketch" }), "Seven additional theme presets parse and use distinct IDs");
+        Assert(additions[0].Mascot == "manga-eye" && additions[1].Mascot == "chain-wren" && additions[2].Mascot == "sphynx" && additions[3].Mascot == "pixel-wren" && additions[4].Mascot == "graffiti-wing" && additions[5].Mascot == "flock" && additions[6].Mascot == "ink-wren", "New themes select original built-in emblems");
+        Assert(additions[4].Colors["Accent"] != additions[0].Colors["Accent"] && additions[4].Colors["Panel"] != additions[0].Colors["Panel"] && additions[6].Decoration == "sketch", "Graffiti palette differs from Anime Noir and Manga Sketch uses ink decoration");
         var original = ThemeManager.Brush("Canvas").Color;
         ThemeManager.Apply(neon);
         Assert(ThemeManager.Brush("Canvas").Color == neon.Colors["Canvas"] && ((SolidColorBrush)app.Resources["Canvas"]).Color == neon.Colors["Canvas"], "Theme changes live UI and WPF style colors");
@@ -66,7 +67,7 @@ class ThemeTests
         {
             var manager = new ThemeManager(storage.Folder);
             manager.Install(args[0]); manager.Install(args[1]); foreach (var path in args.Skip(4)) manager.Install(path);
-            Assert(manager.Installed().Count == 8 && manager.Find("neon-aviary").Name == "Neon Aviary", "All eight optional theme files install locally and can be found by ID");
+            Assert(manager.Installed().Count == 9 && manager.Find("neon-aviary").Name == "Neon Aviary", "All nine optional theme files install locally and can be found by ID");
             Assert(manager.Find("not-installed").Id == ThemeManager.DefaultId, "Missing optional theme falls back to Default");
             var journal = new Journal(); journal.SaveGame(new Game { Name = "Theme test quest" }, DateTime.Now, DateTime.UtcNow);
             var window = new QuestWindow(storage, journal) { Opacity = 0, ShowActivated = false }; window.Show();
@@ -118,6 +119,8 @@ class ThemeTests
                         list.SelectedItem = list.Items.Cast<ComboBoxItem>().Single(i => ((ThemeSpec)i.Tag).Id == theme.Id);
                         Assert(ThemeManager.Current.Id == theme.Id && Walk(window).OfType<Canvas>().Any(c => c.ToolTip != null && c.Visibility == Visibility.Visible && c.ToolTip.ToString().Contains(theme.Mascot == "sphynx" ? "sphynx" : theme.Mascot == "chain-wren" ? "medallion" : theme.Mascot == "pixel-wren" ? "pixel" : theme.Mascot == "flock" ? "flock" : "emblem")), theme.Name + " shows its own small emblem");
                         if (theme.Id == "pixel-perch") Assert(((CornerRadius)app.Resources["ControlCornerRadius"]).TopLeft == 0 && Walk(window).OfType<Border>().Any(b => b.BorderThickness.Left == 2 && b.CornerRadius.TopLeft == 0), "Pixel theme uses square controls and cards");
+                        if (theme.Id == "anime-graffiti") Assert(Walk(window).OfType<Border>().Any(b => b.Background is DrawingBrush) && Walk(window).OfType<Border>().Any(b => b.BorderThickness.Left == 3), "Graffiti has a textured wall and uneven card edges");
+                        if (theme.Id == "manga-sketch") Assert(((CornerRadius)app.Resources["ControlCornerRadius"]).TopLeft == 0 && Walk(window).OfType<Border>().Any(b => b.Background is DrawingBrush) && Walk(window).OfType<Canvas>().Any(c => c.ToolTip != null && c.ToolTip.ToString().Contains("hand-inked")), "Manga Sketch has paper texture and hand-inked wren");
                         if (theme.Id == "the-flock") Assert(Walk(window).OfType<Canvas>().Any(c => c.ToolTip != null && c.ToolTip.ToString().StartsWith("The flock:") && c.Children.OfType<Canvas>().Count() == 3), "Flock header contains the G wren, red wren, and sphynx together");
                         Capture(window, Path.Combine(root, theme.Id + ".png"));
                     }

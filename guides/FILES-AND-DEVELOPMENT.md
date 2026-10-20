@@ -17,7 +17,7 @@ Normal checklist use makes no network calls. Only an explicit leaderboard upload
 - `src/Model.cs`: plain data types, checklist rules, dated snapshots, per-quest schedules, and storage. Stable quest/line IDs and UTC completion timestamps support future streak calculations. Local daily day keys remain local calendar dates; UTC and rolling daily cycles, as well as weekly cycles, have independent records. Journals from versions 1–3 migrate to version 4 on load.
 - `src/App.cs`: WPF windows and interactions. No third-party runtime packages.
 - `src/QuestImport.cs`: strict, versioned quest-file parsing, validation, and duplicate planning. `import/` has the template and format guide.
-- `src/Theme.xaml`: the original default appearance and reusable control styles. `src/Themes.cs` validates and applies optional declarative theme files; `themes/` has eight presets, previews, a template, and its own README. The small theme mascots are built-in vector drawings, not external downloads.
+- `src/Theme.xaml`: the original default appearance and reusable control styles. `src/Themes.cs` validates and applies optional declarative theme files; `themes/` has nine presets, previews, a template, and its own README. The small theme mascots are built-in vector drawings, not external downloads.
 - `src/Leaderboard.cs`: all-time completion tally, encrypted local invite storage, and opt-in upload. `leaderboard/` contains the optional Cloudflare receiver; `docs/` contains the GitHub Pages site.
 - `src/app-icon.png` and `src/app.ico`: cyber-wren and bird-feeder artwork for the embedded Windows shortcut icon.
 - `tests/ModelTests.cs`: isolated model/storage tests; it generates a separate UI fixture with example games.

@@ -1,0 +1,21 @@
+{
+  "format": "wrenfeed-theme",
+  "version": 1,
+  "id": "manga-sketch",
+  "name": "Manga Sketch",
+  "description": "Monochrome paper and ink with crosshatched cards, loose pen marks, and an original sketched wren.",
+  "colors": {
+    "Canvas": "#F1F1EE",
+    "Panel": "#FFFFFF",
+    "Field": "#E7E7E4",
+    "Edge": "#454545",
+    "Ink": "#191919",
+    "Muted": "#4D4D4D",
+    "Accent": "#222222",
+    "Success": "#484848"
+  },
+  "fonts": { "body": "Segoe UI", "display": "Segoe Print" },
+  "decoration": "sketch",
+  "mark": "✎",
+  "mascot": "ink-wren"
+}

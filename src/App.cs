@@ -63,15 +63,66 @@ namespace DailyQuest
         public static Border Card(UIElement child)
         {
             var decoration = ThemeManager.Current.Decoration;
-            var card = new Border { Background = Brush("Panel"), BorderBrush = Brush("Edge"), BorderThickness = new Thickness(decoration == "filigree" || decoration == "manga" || decoration == "pixel" || decoration == "graffiti" ? 2 : 1), CornerRadius = new CornerRadius(decoration == "none" ? 8 : decoration == "circuit" ? 4 : decoration == "manga" || decoration == "graffiti" ? 2 : decoration == "chain" ? 6 : decoration == "whiskers" ? 14 : decoration == "flock" ? 12 : decoration == "pixel" ? 0 : 3), Padding = new Thickness(14) };
+            var card = new Border { Background = Brush("Panel"), BorderBrush = Brush("Edge"), BorderThickness = decoration == "graffiti" ? new Thickness(3, 1, 1, 3) : decoration == "sketch" ? new Thickness(2, 1, 2, 2) : new Thickness(decoration == "filigree" || decoration == "manga" || decoration == "pixel" ? 2 : 1), CornerRadius = new CornerRadius(decoration == "none" ? 8 : decoration == "circuit" ? 4 : decoration == "manga" || decoration == "graffiti" ? 2 : decoration == "sketch" || decoration == "pixel" ? 0 : decoration == "chain" ? 6 : decoration == "whiskers" ? 14 : decoration == "flock" ? 12 : 3), Padding = new Thickness(14) };
             if (decoration == "none") { card.Child = child; return card; }
             var panel = new StackPanel();
             var trim = new DockPanel { Margin = new Thickness(0, -5, 0, 10) };
+            if (decoration == "graffiti" || decoration == "sketch")
+            {
+                trim.Children.Add(decoration == "graffiti" ? GraffitiTrim() : SketchTrim());
+                panel.Children.Add(trim); panel.Children.Add(child); card.Child = panel; return card;
+            }
             string trimText = decoration == "circuit" ? "◇ ── ◇ ─────" : decoration == "manga" ? "╱╱  ✦  ╲╲" : decoration == "graffiti" ? "✦  ╱╱  ◇  ╲╲  ✦" : decoration == "flock" ? "✦ · ✦ · ✦" : decoration == "chain" ? "◇ · ◇ · ◇" : decoration == "whiskers" ? "✧  ·  ✧" : decoration == "pixel" ? "▪ ▪ ▪  ■" : "✦  ───  ✦  ───";
             var mark = Text(trimText, 11, "Accent"); mark.Opacity = 0.8; mark.HorizontalAlignment = HorizontalAlignment.Right;
             trim.Children.Add(mark); panel.Children.Add(trim); panel.Children.Add(child); card.Child = panel;
             return card;
         }
+        public static Canvas GraffitiTrim()
+        {
+            var trim = new Canvas { Width = 112, Height = 17, HorizontalAlignment = HorizontalAlignment.Right, IsHitTestVisible = false };
+            trim.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 1,13 L 27,4 L 48,11 L 79,2 L 110,8 M 3,16 L 30,9 L 50,15"), Stroke = Brush("Ink"), StrokeThickness = 2.1, Opacity = 0.78, StrokeLineJoin = PenLineJoin.Bevel });
+            trim.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 13,14 L 38,6 L 58,13 M 69,10 L 98,3"), Stroke = new SolidColorBrush(Color.FromRgb(67, 96, 204)), StrokeThickness = 3.2, Opacity = 0.85 });
+            trim.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 30,2 L 22,15 M 54,1 L 48,12 M 88,4 L 82,15"), Stroke = Brush("Accent"), StrokeThickness = 2.4 });
+            foreach (var dot in new[] { new Point(3, 2), new Point(7, 6), new Point(103, 14), new Point(107, 12) }) trim.Children.Add(new System.Windows.Shapes.Ellipse { Width = 2.5, Height = 2.5, Fill = Brush("Success"), Margin = new Thickness(dot.X, dot.Y, 0, 0) });
+            return trim;
+        }
+        public static Canvas SketchTrim()
+        {
+            var trim = new Canvas { Width = 105, Height = 16, HorizontalAlignment = HorizontalAlignment.Right, IsHitTestVisible = false };
+            trim.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 2,3 L 103,4 M 1,8 L 101,10 M 3,12 L 83,13 M 10,1 L 1,14 M 23,1 L 13,15 M 37,2 L 27,15 M 50,2 L 40,15 M 64,2 L 54,15 M 77,2 L 67,15 M 91,2 L 81,15"), Stroke = Brush("Accent"), StrokeThickness = 1, Opacity = 0.72 });
+            return trim;
+        }
+        public static DrawingBrush TexturedWall(string decoration, double opacity)
+        {
+            var background = CurrentColor("Canvas");
+            var ink = CurrentColor("Ink");
+            var accent = CurrentColor("Accent");
+            bool graffiti = decoration == "graffiti";
+            double wallWidth = graffiti ? 450 : 240, wallHeight = graffiti ? 720 : 240;
+            var group = new DrawingGroup { ClipGeometry = new RectangleGeometry(new Rect(0, 0, wallWidth, wallHeight)) };
+            group.Children.Add(new GeometryDrawing(new SolidColorBrush(background), null, new RectangleGeometry(new Rect(0, 0, wallWidth, wallHeight))));
+            Func<Color, byte, Brush> wash = delegate(Color color, byte alpha) { return new SolidColorBrush(Color.FromArgb(alpha, color.R, color.G, color.B)); };
+            if (graffiti)
+            {
+                group.Children.Add(new GeometryDrawing(null, new Pen(wash(ink, 57), 1.8), Geometry.Parse("M -9,28 L 187,4 M 2,38 L 136,15 M 329,15 L 455,43 M 316,25 L 446,54 M -4,284 L 94,247 M 343,301 L 456,260 M 35,423 L 183,398 M 299,454 L 451,421 M 13,664 L 196,613 M 277,706 L 454,652")));
+                group.Children.Add(new GeometryDrawing(null, new Pen(wash(ink, 87), 4.2), Geometry.Parse("M -6,148 Q 39,83 59,137 Q 78,174 124,91 M 5,162 Q 40,102 57,148 L 131,105 M 294,119 Q 339,61 365,119 Q 382,147 442,80 M 285,133 Q 337,77 363,131 L 449,95 M 16,506 Q 61,451 98,495 Q 118,524 173,461 M 7,526 Q 56,467 95,510 L 180,479 M 226,600 Q 280,549 310,600 Q 339,631 447,554 M 232,614 Q 279,561 309,611 L 454,568")));
+                group.Children.Add(new GeometryDrawing(null, new Pen(wash(accent, 66), 4.4), Geometry.Parse("M 19,182 L 68,165 L 84,178 M 354,171 L 428,151 M 38,542 L 96,526 M 265,646 L 329,624 M 183,329 L 222,315")));
+                group.Children.Add(new GeometryDrawing(null, new Pen(wash(Color.FromRgb(67, 96, 204), 97), 3.8), Geometry.Parse("M 2,174 L 71,145 M 318,159 L 445,118 M 15,531 L 119,485 M 265,626 L 394,572 M 191,342 L 236,323")));
+                group.Children.Add(new GeometryDrawing(null, new Pen(wash(Color.FromRgb(221, 73, 153), 85), 2.7), Geometry.Parse("M 110,117 L 158,98 M 116,127 L 177,102 M 288,150 L 332,128 M 176,482 L 221,461 M 347,617 L 411,591")));
+            }
+            else
+            {
+                group.Children.Add(new GeometryDrawing(null, new Pen(wash(ink, 30), 1), Geometry.Parse("M 0,0 L 57,57 M 0,13 L 46,59 M 0,27 L 32,59 M 180,185 L 239,244 M 194,181 L 242,229 M 210,183 L 244,217 M 4,225 L 28,204 M 6,231 L 37,201")));
+                group.Children.Add(new GeometryDrawing(null, new Pen(wash(ink, 20), 1), Geometry.Parse("M 0,58 L 59,0 M 0,45 L 45,0 M 182,241 L 240,183 M 197,241 L 241,197")));
+            }
+            var specks = new GeometryGroup();
+            for (int i = 0; i < (graffiti ? 100 : 25); i++) specks.Children.Add(new EllipseGeometry(new Point((i * 67 + 13) % (int)wallWidth, (i * 97 + 21) % (int)wallHeight), i % 6 == 0 ? 1.6 : 0.7, i % 6 == 0 ? 1.6 : 0.7));
+            group.Children.Add(new GeometryDrawing(wash(ink, graffiti ? (byte)58 : (byte)25), null, specks));
+            return graffiti
+                ? new DrawingBrush(group) { TileMode = TileMode.None, ViewportUnits = BrushMappingMode.RelativeToBoundingBox, Viewport = new Rect(0, 0, 1, 1), ViewboxUnits = BrushMappingMode.Absolute, Viewbox = new Rect(0, 0, wallWidth, wallHeight), Stretch = Stretch.Fill, Opacity = opacity }
+                : new DrawingBrush(group) { TileMode = TileMode.Tile, ViewportUnits = BrushMappingMode.Absolute, Viewport = new Rect(0, 0, wallWidth, wallHeight), ViewboxUnits = BrushMappingMode.Absolute, Viewbox = new Rect(0, 0, wallWidth, wallHeight), Stretch = Stretch.Fill, Opacity = opacity };
+        }
+        static Color CurrentColor(string key) { return ThemeManager.Current.Colors[key]; }
         public static Canvas CuteWren()
         {
             var bird = new Canvas { Width = 43, Height = 33, Margin = new Thickness(0, 0, 10, 0), ToolTip = "A little wren keeping watch" };
@@ -127,12 +178,26 @@ namespace DailyQuest
         }
         public static Canvas GraffitiWing()
         {
-            var mark = new Canvas { Width = 49, Height = 36, Margin = new Thickness(0, 0, 7, 0), ToolTip = "An original sprayed wing and star emblem" };
-            mark.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 3,26 Q 16,24 26,8 L 44,4 L 32,19 L 41,17 L 25,29 L 17,25 Z"), Fill = Brush("Accent"), Stroke = Brush("Ink"), StrokeThickness = 1.2, StrokeLineJoin = PenLineJoin.Round });
-            mark.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 4,11 L 7,14 L 4,17 L 1,14 Z M 43,25 L 45,27 L 43,29 L 41,27 Z"), Fill = Brush("Success") });
-            mark.Children.Add(new System.Windows.Shapes.Ellipse { Width = 2, Height = 2, Fill = Brush("Accent"), Margin = new Thickness(11, 3, 0, 0) });
-            mark.Children.Add(new System.Windows.Shapes.Ellipse { Width = 3, Height = 3, Fill = Brush("Success"), Margin = new Thickness(45, 11, 0, 0) });
+            var mark = new Canvas { Width = 49, Height = 36, Margin = new Thickness(0, 0, 7, 0), ToolTip = "An original inked graffiti-wing emblem" };
+            mark.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 3,29 Q 19,25 25,9 L 43,4 L 35,20 L 45,17 L 28,33 L 18,29 Z"), Fill = new SolidColorBrush(Color.FromRgb(221, 73, 153)) });
+            mark.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 2,24 Q 17,22 24,6 L 42,2 L 31,17 L 40,15 L 24,28 L 16,24 Z"), Fill = Brush("Accent"), Stroke = Brush("Ink"), StrokeThickness = 1.4, StrokeLineJoin = PenLineJoin.Bevel });
+            mark.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 6,22 L 23,20 M 15,17 L 33,12 M 25,25 L 36,20"), Stroke = new SolidColorBrush(Color.FromRgb(55, 83, 190)), StrokeThickness = 2.3, StrokeStartLineCap = PenLineCap.Square });
+            mark.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 1,9 L 4,11 L 2,15 M 43,24 L 47,25 M 39,31 L 45,33"), Stroke = Brush("Success"), StrokeThickness = 1.8 });
+            mark.Children.Add(new System.Windows.Shapes.Ellipse { Width = 2, Height = 2, Fill = Brush("Ink"), Margin = new Thickness(12, 2, 0, 0) });
+            mark.Children.Add(new System.Windows.Shapes.Ellipse { Width = 2.5, Height = 2.5, Fill = Brush("Ink"), Margin = new Thickness(45, 10, 0, 0) });
             return mark;
+        }
+        public static Canvas InkWren()
+        {
+            var bird = new Canvas { Width = 51, Height = 37, Margin = new Thickness(0, 0, 5, 0), ToolTip = "An original hand-inked wren emblem" };
+            bird.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 11,24 L 1,11 L 4,26 L 14,28 Z"), Fill = Brush("Panel"), Stroke = Brush("Accent"), StrokeThickness = 1.6 });
+            bird.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 10,22 Q 14,13 25,13 Q 32,9 37,14 Q 44,20 37,27 Q 24,33 12,27 Z"), Fill = Brush("Panel"), Stroke = Brush("Accent"), StrokeThickness = 1.8, StrokeLineJoin = PenLineJoin.Bevel });
+            bird.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 21,15 Q 25,3 35,5 Q 42,7 42,16 L 37,20 Q 31,16 21,15 Z"), Fill = Brush("Panel"), Stroke = Brush("Accent"), StrokeThickness = 1.7 });
+            bird.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 42,12 L 50,15 L 42,17 Z"), Fill = Brush("Accent") });
+            bird.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 16,21 L 30,17 M 15,25 L 34,20 M 19,28 L 35,23 M 18,19 L 23,26 M 23,17 L 28,26 M 28,16 L 33,25 M 18,33 L 21,28 M 29,33 L 31,28 M 11,34 L 40,34"), Stroke = Brush("Accent"), StrokeThickness = 1.1, StrokeStartLineCap = PenLineCap.Round });
+            bird.Children.Add(new System.Windows.Shapes.Ellipse { Width = 3, Height = 3, Fill = Brush("Accent"), Margin = new Thickness(35, 10, 0, 0) });
+            bird.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 1,5 L 8,12 M 46,2 L 43,8 M 45,30 L 49,34"), Stroke = Brush("Edge"), StrokeThickness = 1.2 });
+            return bird;
         }
         public static Canvas Flock()
         {
@@ -306,7 +371,9 @@ namespace DailyQuest
         void ApplyWindowOpacity()
         {
             Opacity = journal.Settings.BackgroundOnlyOpacity ? 1.0 : journal.Settings.WindowOpacity;
-            shell.Background = Surface("Canvas");
+            shell.Background = ThemeManager.Current.Decoration == "graffiti" || ThemeManager.Current.Decoration == "sketch"
+                ? (Brush)UI.TexturedWall(ThemeManager.Current.Decoration, journal.Settings.BackgroundOnlyOpacity ? journal.Settings.WindowOpacity : 1)
+                : Surface("Canvas");
             foreach (var card in cards.Children.OfType<Border>()) card.Background = Surface("Panel");
             ApplyTextReadability();
         }
@@ -506,13 +573,15 @@ namespace DailyQuest
                 case "pixel-wren": mascot = UI.PixelWren(); break;
                 case "manga-eye": mascot = UI.MangaEye(); break;
                 case "graffiti-wing": mascot = UI.GraffitiWing(); break;
+                case "ink-wren": mascot = UI.InkWren(); break;
                 case "flock": mascot = UI.Flock(); break;
             }
             wrenBadge.Width = ThemeManager.Current.Mascot == "flock" ? 119 : 52;
             if (mascot != null) wrenBadge.Children.Add(mascot);
             wrenBadge.Visibility = mascot == null ? Visibility.Collapsed : Visibility.Visible;
             headerOrnament.Visibility = ThemeManager.Current.Decoration == "none" ? Visibility.Collapsed : Visibility.Visible;
-            headerOrnament.Text = ThemeManager.Current.Decoration == "circuit" ? "── ◇ ────── ◇ ──" : ThemeManager.Current.Decoration == "manga" ? "╱╱   ✦   ╲╲   ╱╱   ✦   ╲╲" : ThemeManager.Current.Decoration == "graffiti" ? "✦   ╱╱  COLOR THE QUEST  ╲╲   ✦" : ThemeManager.Current.Decoration == "flock" ? "✧  TOGETHER, ONE QUEST AT A TIME  ✧" : ThemeManager.Current.Decoration == "chain" ? "◇ ─ ◇ ─ ◇ ─ ◇" : ThemeManager.Current.Decoration == "whiskers" ? "✧   ᵕ   ✧   ᵕ   ✧" : ThemeManager.Current.Decoration == "pixel" ? "▪ ▪ ■ ▪ ▪ ■ ▪ ▪" : "✦  ───  ◇  ───  ✦";
+            headerOrnament.Text = ThemeManager.Current.Decoration == "circuit" ? "── ◇ ────── ◇ ──" : ThemeManager.Current.Decoration == "manga" ? "╱╱   ✦   ╲╲   ╱╱   ✦   ╲╲" : ThemeManager.Current.Decoration == "graffiti" ? "╱╱╱  DAILY // WEEKLY  ╱╱╱" : ThemeManager.Current.Decoration == "sketch" ? "////  INK THE NEXT QUEST  ////" : ThemeManager.Current.Decoration == "flock" ? "✧  TOGETHER, ONE QUEST AT A TIME  ✧" : ThemeManager.Current.Decoration == "chain" ? "◇ ─ ◇ ─ ◇ ─ ◇" : ThemeManager.Current.Decoration == "whiskers" ? "✧   ᵕ   ✧   ᵕ   ✧" : ThemeManager.Current.Decoration == "pixel" ? "▪ ▪ ■ ▪ ▪ ■ ▪ ▪" : "✦  ───  ◇  ───  ✦";
+            headerOrnament.FontWeight = ThemeManager.Current.Decoration == "graffiti" || ThemeManager.Current.Decoration == "sketch" ? FontWeights.Bold : FontWeights.Normal;
         }
         StackPanel GameRow(GameResult game)
         {
