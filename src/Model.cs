@@ -22,6 +22,7 @@ namespace DailyQuest
         [DataMember] public string DailyReset = "local";
         [DataMember] public int DailyHourUtc;
         [DataMember] public int DailyMinuteUtc;
+        [DataMember] public int DailyIntervalHours = 24;
         [DataMember] public List<QuestLine> Lines = new List<QuestLine>();
         [DataMember] public bool Archived;
         [DataMember] public string WeeklyReset = "fixed";
@@ -70,7 +71,7 @@ namespace DailyQuest
     }
     [DataContract] public class Journal
     {
-        [DataMember] public int Version = 3;
+        [DataMember] public int Version = 4;
         [DataMember] public List<Game> Games = new List<Game>();
         [DataMember] public List<DayRecord> Days = new List<DayRecord>();
         [DataMember] public List<Game> WeeklyGames = new List<Game>();
@@ -87,7 +88,7 @@ namespace DailyQuest
             {
                 day = new DayRecord { Date = key };
                 Days.Add(day);
-                foreach (var game in Games.Where(g => !g.Archived && g.DailyReset != "utc")) day.Games.Add(Snapshot(game));
+                foreach (var game in Games.Where(g => !g.Archived && g.DailyReset == "local")) day.Games.Add(Snapshot(game));
             }
             return day;
         }
@@ -113,9 +114,29 @@ namespace DailyQuest
             }
             return latest;
         }
+        public static DateTime NextDailyIntervalReset(Game game, WeeklyRecord record)
+        {
+            if (record == null || record.Result == null || !record.Result.Done || String.IsNullOrEmpty(record.Result.CompletedUtc)) return DateTime.MaxValue;
+            return DateTime.Parse(record.Result.CompletedUtc, null, System.Globalization.DateTimeStyles.RoundtripKind).ToUniversalTime().AddHours(game.DailyIntervalHours);
+        }
+        public WeeklyRecord CurrentDailyInterval(Game game, DateTime utc)
+        {
+            utc = utc.ToUniversalTime();
+            var latest = DailyUtcRecords.LastOrDefault(r => r.GameId == game.Id);
+            if (latest == null || latest.Result.Done && utc >= NextDailyIntervalReset(game, latest))
+            {
+                latest = new WeeklyRecord { GameId = game.Id, CycleStartUtc = (latest == null ? utc : NextDailyIntervalReset(game, latest)).ToString("o"), Result = Snapshot(game) };
+                DailyUtcRecords.Add(latest);
+            }
+            return latest;
+        }
+        public WeeklyRecord CurrentTimedDaily(Game game, DateTime utc)
+        {
+            return game.DailyReset == "utc" ? CurrentDailyUtc(game, utc) : CurrentDailyInterval(game, utc);
+        }
         public GameResult CurrentDaily(Game game, DateTime local, DateTime utc)
         {
-            return game.DailyReset == "utc" ? CurrentDailyUtc(game, utc).Result : Today(local).Games.First(g => g.Id == game.Id);
+            return game.DailyReset == "local" ? Today(local).Games.First(g => g.Id == game.Id) : CurrentTimedDaily(game, utc).Result;
         }
         static GameResult Updated(Game game, GameResult old, DateTime utc)
         {
@@ -137,12 +158,21 @@ namespace DailyQuest
             var index = Games.FindIndex(g => g.Id == game.Id);
             var previous = index < 0 ? null : Games[index];
             var oldRecord = DailyUtcRecords.LastOrDefault(r => r.GameId == game.Id);
-            var old = previous == null ? null : previous.DailyReset == "utc" ? (oldRecord == null ? null : oldRecord.Result) : day.Games.FirstOrDefault(g => g.Id == game.Id);
+            var old = previous == null ? null : previous.DailyReset != "local" ? (oldRecord == null ? null : oldRecord.Result) : day.Games.FirstOrDefault(g => g.Id == game.Id);
             if (index < 0) Games.Add(game); else Games[index] = game;
-            if (game.DailyReset == "utc")
+            if (game.DailyReset != "local")
             {
-                var record = CurrentDailyUtc(game, utc);
-                record.Result = Updated(game, old ?? record.Result, utc);
+                if (previous != null && previous.DailyReset != game.DailyReset)
+                {
+                    var start = game.DailyReset == "utc" ? DailyCycleStart(game, utc) : utc.ToUniversalTime();
+                    DailyUtcRecords.Add(new WeeklyRecord { GameId = game.Id, CycleStartUtc = start.ToString("o"), Result = Updated(game, old, utc) });
+                }
+                else
+                {
+                    var record = CurrentTimedDaily(game, utc);
+                    record.Result = Updated(game, record.Result, utc);
+                }
+                if (game.DailyReset == "after-completion") CurrentDailyInterval(game, utc);
             }
             else
             {
@@ -155,7 +185,7 @@ namespace DailyQuest
         {
             Games.First(g => g.Id == id).Archived = true;
             var utcRecord = DailyUtcRecords.LastOrDefault(r => r.GameId == id);
-            var result = Games.First(g => g.Id == id).DailyReset == "utc" ? (utcRecord == null ? null : utcRecord.Result) : Today(local).Games.FirstOrDefault(g => g.Id == id);
+            var result = Games.First(g => g.Id == id).DailyReset != "local" ? (utcRecord == null ? null : utcRecord.Result) : Today(local).Games.FirstOrDefault(g => g.Id == id);
             if (result != null) result.Archived = true;
         }
         public void Restore(string id, DateTime local, DateTime utc)
@@ -276,7 +306,7 @@ namespace DailyQuest
         }
         public static void ValidateDailySchedule(Game game)
         {
-            if (game.DailyReset != "local" && game.DailyReset != "utc" || game.DailyHourUtc < 0 || game.DailyHourUtc > 23 || game.DailyMinuteUtc < 0 || game.DailyMinuteUtc > 59) throw new InvalidDataException("Invalid daily reset rule.");
+            if (game.DailyReset != "local" && game.DailyReset != "utc" && game.DailyReset != "after-completion" || game.DailyHourUtc < 0 || game.DailyHourUtc > 23 || game.DailyMinuteUtc < 0 || game.DailyMinuteUtc > 59 || game.DailyIntervalHours < 1 || game.DailyIntervalHours > 8760) throw new InvalidDataException("Invalid daily reset rule.");
         }
     }
     public sealed class Storage : IDisposable
@@ -300,19 +330,20 @@ namespace DailyQuest
         {
             Journal journal;
             using (var stream = new MemoryStream(bytes)) journal = (Journal)new DataContractJsonSerializer(typeof(Journal)).ReadObject(stream);
-            if (journal == null || (journal.Version != 1 && journal.Version != 2 && journal.Version != 3)) throw new InvalidDataException("This journal uses an unsupported version. Keep the original file and use the matching app version.");
+            if (journal == null || (journal.Version != 1 && journal.Version != 2 && journal.Version != 3 && journal.Version != 4)) throw new InvalidDataException("This journal uses an unsupported version. Keep the original file and use the matching app version.");
             if (journal.Games == null || journal.Days == null || journal.Settings == null) throw new InvalidDataException("The journal is missing required data.");
             if (journal.Version == 1) { journal.WeeklyGames = new List<Game>(); journal.WeeklyRecords = new List<WeeklyRecord>(); }
             if (journal.WeeklyGames == null || journal.WeeklyRecords == null) throw new InvalidDataException("The journal is missing weekly data.");
             if (journal.Version < 3) journal.DailyUtcRecords = new List<WeeklyRecord>();
             if (journal.DailyUtcRecords == null) throw new InvalidDataException("The journal is missing UTC daily history.");
-            journal.Version = 3;
+            journal.Version = 4;
             var ids = new HashSet<string>();
             foreach (var game in journal.Games.Concat(journal.WeeklyGames))
             {
                 if (game == null || String.IsNullOrWhiteSpace(game.Id) || !ids.Add(game.Id) || String.IsNullOrWhiteSpace(game.Name) || game.Lines == null) throw new InvalidDataException("Invalid game data.");
                 if (game.GroupName == null) game.GroupName = "";
                 if (game.DailyReset == null) game.DailyReset = "local";
+                if (game.DailyIntervalHours == 0 && game.DailyReset != "after-completion") game.DailyIntervalHours = 24;
                 if (journal.WeeklyGames.Contains(game)) Journal.ValidateWeeklySchedule(game);
                 else Journal.ValidateDailySchedule(game);
                 var lines = new HashSet<string>();

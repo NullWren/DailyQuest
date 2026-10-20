@@ -10,7 +10,7 @@ A small, offline Windows quest log for daily and weekly games. Launch **WrenFeed
 - The **···** menu edits, reorders, or archives a quest. Archiving keeps its history. Restore archived quests in Settings.
 - **History** shows a read-only snapshot for a date. Past game names, descriptions, task text, and results stay intact when you change today's list. Today is updated as you edit it.
 - **Weekly** has its own game list and recent completion history. Each weekly game can reset on a fixed UTC weekday and time, or at **00:00 UTC on the seventh day after its last completion**. The second option suits Tears of Guthix: a completion on Sunday UTC becomes available the following Sunday at 00:00 UTC. The tab shows the next reset in your local time after completion.
-- Daily quests can reset at **local midnight** (the default) or at a chosen **UTC time**. This allows games with server-wide resets to share a group with quests that follow local time. The window detects resets while open. If the app is closed, the next launch creates the current cycle. Unopened cycles have no recorded result and are never assumed complete.
+- Daily quests can reset at **local midnight** (the default), at a chosen **UTC time**, or a chosen **number of hours after completion** (24 hours by default). This allows game tasks with server-wide resets or rolling timers to share a group. For Forma, choose 23 hours and complete the quest when you start the next build. The window detects resets while open. If the app is closed, the next launch creates the current cycle. Unopened cycles have no recorded result and are never assumed complete.
 - Settings includes **always on top**, completion animations, and backup export/restore. Backups include daily and weekly games and their history. Restoring a backup replaces the journal, after confirmation, and preserves a separate copy of the journal being replaced.
 - Resize the window to suit your list. Closing the window exits the app; it does not keep running in the tray. Window size is remembered.
 - Keyboard: **Ctrl+N** adds a game, **Ctrl+H** toggles History, **Ctrl+,** opens Settings, **Esc** closes a dialog.
@@ -27,7 +27,7 @@ These local app/data paths are outside this source folder, which is under OneDri
 
 ## Development
 
-- `src/Model.cs`: plain data types, checklist rules, dated snapshots, per-quest schedules, and storage. Stable quest/line IDs and UTC completion timestamps support future streak calculations. Local daily day keys remain local calendar dates; UTC daily and weekly cycles have independent records. Journals from versions 1 and 2 migrate to version 3 on load.
+- `src/Model.cs`: plain data types, checklist rules, dated snapshots, per-quest schedules, and storage. Stable quest/line IDs and UTC completion timestamps support future streak calculations. Local daily day keys remain local calendar dates; UTC and rolling daily cycles, as well as weekly cycles, have independent records. Journals from versions 1–3 migrate to version 4 on load.
 - `src/App.cs`: WPF windows and interactions. No third-party runtime packages.
 - `src/Theme.xaml`: colors, fonts, and reusable control styles. One quest-log preset ships initially. Additional skins can use separate resource dictionaries without changing stored completion history.
 - `src/app-icon.png` is the transparent cyber-wren and bird-feeder artwork for the shortcut icon. `src/app.ico` contains Windows icon sizes and is embedded in the executable.

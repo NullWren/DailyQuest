@@ -111,7 +111,29 @@ class EditorTests
         if (failure != null) throw failure;
         if (saved != true || utcDaily.Result.GroupName != "Warframe" || utcDaily.Result.DailyReset != "utc" || utcDaily.Result.DailyHourUtc != 17) throw new Exception("Daily editor did not save UTC rule and group.");
         Console.WriteLine("PASS Daily editor saves game group and fixed UTC reset");
+        var rolling = new GameEditor(owner, null, false, "Warframe") { Opacity = 0, ShowActivated = false };
+        rolling.Loaded += delegate
+        {
+            try
+            {
+                var controls = Walk(rolling).ToList();
+                controls.OfType<TextBox>().Single(t => AutomationProperties.GetName(t) == "Quest name").Text = "Crafting (Forma)";
+                controls.OfType<ComboBox>().Single(c => AutomationProperties.GetName(c) == "Daily reset rule").SelectedIndex = 2;
+                var hours = controls.OfType<TextBox>().Single(t => AutomationProperties.GetName(t) == "Hours after completion");
+                if (hours.Text != "24") throw new Exception("Rolling reset did not default to 24 hours.");
+                hours.Text = "23";
+                controls.OfType<Button>().Single(b => (string)b.Content == "Save quest").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+            catch (Exception e) { failure = e; rolling.Close(); }
+        };
+        saved = rolling.ShowDialog();
+        if (failure != null) throw failure;
+        if (saved != true || rolling.Result.DailyReset != "after-completion" || rolling.Result.DailyIntervalHours != 23) throw new Exception("Daily editor did not save rolling reset.");
+        Console.WriteLine("PASS Daily editor defaults to 24 hours and saves a 23-hour rolling reset");
         var windowJournal = new Journal();
+        var rollingSample = new Game { Name = "Forma window test", GroupName = "Warframe", DailyReset = "after-completion", DailyIntervalHours = 23 };
+        windowJournal.SaveGame(rollingSample, DateTime.Now, DateTime.UtcNow);
+        windowJournal.ToggleGame(rollingSample.Id, true, DateTime.Now, DateTime.UtcNow);
         var sample = new Game { Name = "Weekly window test", GroupName = "OSRS", WeeklyReset = "completion-weekday" };
         var sibling = new Game { Name = "Kingdom", GroupName = "OSRS", WeeklyReset = "fixed", FixedWeekdayUtc = (int)DayOfWeek.Thursday };
         windowJournal.SaveWeeklyGame(sample, DateTime.UtcNow);
@@ -120,6 +142,8 @@ class EditorTests
         {
             var window = new QuestWindow(storage, windowJournal) { Opacity = 0, ShowActivated = false };
             window.Show();
+            if (!Walk(window).OfType<TextBlock>().Any(t => t.Text == "23 hours after completion") || !Walk(window).OfType<TextBlock>().Any(t => t.Text.StartsWith("Ready again:"))) throw new Exception("Rolling quest did not show its rule and next ready time.");
+            Console.WriteLine("PASS Daily tab shows rolling reset rule and next ready time");
             Walk(window).OfType<Button>().Single(b => (string)b.Content == "Weekly").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             if (!Walk(window).OfType<TextBlock>().Any(t => t.Text == "Your weekly quests") || !Walk(window).OfType<TextBlock>().Any(t => t.Text == "Weekly window test") || Walk(window).OfType<TextBlock>().Count(t => t.Text == "OSRS") != 1) throw new Exception("Weekly tab did not group both quests under one header.");
             var complete = Walk(window).OfType<CheckBox>().Single(c => AutomationProperties.GetName(c) == "Complete Weekly window test");

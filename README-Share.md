@@ -16,7 +16,7 @@ Windows may show a first-run warning because this is a small unsigned local app.
 - Add a quest, a short description, and optional task lines. Give related quests the same optional **Game group** to show them in one panel.
 - Make any task line individually checkable.
 - Checking a game checks all of its tasks. Completing all its tasks completes the game.
-- Each quest has its own completion and reset rule, even within a group. Daily quests can start fresh at local midnight or at a fixed UTC time. History saves earlier results.
+- Each quest has its own completion and reset rule, even within a group. Daily quests can start fresh at local midnight, at a fixed UTC time, or a chosen number of hours after completion. History saves earlier results.
 - The **Weekly** tab keeps a separate list. Set each game to a fixed UTC reset day and time, or to reset at 00:00 UTC seven days after completion (useful for Tears of Guthix). Recent weekly completions appear below the current list.
 - **Settings** includes an optional always-on-top mode, completion animations, and backup export/restore.
 
