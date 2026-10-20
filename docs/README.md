@@ -32,4 +32,3 @@ GitHub Pages is static and cannot receive submissions itself. The connected rece
 ## Local preview
 
 From the repository root, run `python -m http.server 8765 --directory docs`, then visit `http://localhost:8765/` and use **See the standings**. Opening `standings.html` directly from disk will block the JSON fetch in most browsers.
-
