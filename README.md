@@ -18,7 +18,7 @@ Windows may show an unsigned-app warning on first launch. If you trust this down
 - See past completions in **History**. Archive old quests without erasing their records.
 - Keep the log visible over a game with **always on top** and adjustable visibility. Try eight optional [themes](themes/README.md), or stay with the original look.
 - Add many quests at once with the [import template](import/README.md) or its [AI chat prompt](import/AI-PROMPT.md).
-- Optionally share reviewed daily and weekly totals by game with the [WrenFeed standings](https://nullwren.github.io/WrenFeed/standings.html) when the leaderboard opens. Uploads happen only when you press **Upload totals**.
+- Optionally share reviewed daily and weekly totals by game with the [WrenFeed standings](https://nullwren.github.io/WrenFeed/standings.html) using a private invite code. Uploads happen only when you press **Upload totals**.
 
 Your progress lives separately in `%LOCALAPPDATA%\DailyQuest\journal.json`, so replacing the extracted app folder for an update keeps your list. Close WrenFeed before replacing its files. Use **Settings → Export backup** for a separate copy.
 
