@@ -101,8 +101,8 @@ namespace DailyQuest
             var theme = new ThemeSpec { Id = Text(root, "id", 40), Name = Text(root, "name", 60), Description = Text(root, "description", 160), Decoration = Text(root, "decoration", 16), Mark = Text(root, "mark", 4) };
             theme.Mascot = root.ContainsKey("mascot") ? Text(root, "mascot", 10) : "none";
             if (!Regex.IsMatch(theme.Id, "^[a-z][a-z0-9-]*$") || theme.Id == DefaultId) throw new InvalidDataException("Theme id must use lowercase letters, numbers, and hyphens, and cannot be \"quest\".");
-            if (theme.Decoration != "none" && theme.Decoration != "circuit" && theme.Decoration != "filigree") throw new InvalidDataException("Theme decoration must be none, circuit, or filigree.");
-            if (theme.Mascot != "none" && theme.Mascot != "wren") throw new InvalidDataException("Theme mascot must be none or wren.");
+            if (!new[] { "none", "circuit", "filigree", "manga", "chain", "whiskers", "pixel" }.Contains(theme.Decoration)) throw new InvalidDataException("Unknown theme decoration.");
+            if (!new[] { "none", "wren", "chain-wren", "sphynx", "pixel-wren", "manga-eye" }.Contains(theme.Mascot)) throw new InvalidDataException("Unknown theme mascot.");
             object rawFonts, rawColors;
             if (!root.TryGetValue("fonts", out rawFonts) || !root.TryGetValue("colors", out rawColors)) throw new InvalidDataException("Theme needs fonts and colors objects.");
             var fonts = Object(rawFonts, "fonts"); Keys(fonts, FontKeys, "fonts");
@@ -147,6 +147,7 @@ namespace DailyQuest
             }
             resources["BodyFont"] = new FontFamily(theme.BodyFont);
             resources["DisplayFont"] = new FontFamily(theme.DisplayFont);
+            resources["ControlCornerRadius"] = new CornerRadius(theme.Decoration == "pixel" ? 0 : theme.Decoration == "whiskers" ? 9 : theme.Decoration == "manga" ? 2 : 5);
             Current = theme;
         }
     }

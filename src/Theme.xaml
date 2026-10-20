@@ -9,6 +9,7 @@
   <SolidColorBrush x:Key="Success" Color="#91C7AA"/>
   <FontFamily x:Key="BodyFont">Segoe UI</FontFamily>
   <FontFamily x:Key="DisplayFont">Georgia</FontFamily>
+  <CornerRadius x:Key="ControlCornerRadius">5</CornerRadius>
   <Style TargetType="Window">
     <Setter Property="Background" Value="{DynamicResource Canvas}"/>
     <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
@@ -28,7 +29,7 @@
     <Setter Property="VerticalContentAlignment" Value="Center"/>
     <Setter Property="Template">
       <Setter.Value><ControlTemplate TargetType="Button">
-        <Border x:Name="Box" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5" Padding="{TemplateBinding Padding}">
+        <Border x:Name="Box" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{DynamicResource ControlCornerRadius}" Padding="{TemplateBinding Padding}">
           <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
         </Border>
         <ControlTemplate.Triggers>
@@ -58,7 +59,7 @@
     <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="CheckBox">
       <Grid Background="Transparent" MinHeight="28">
         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-        <Border x:Name="Square" Width="19" Height="19" CornerRadius="4" BorderThickness="1" BorderBrush="{DynamicResource Muted}" Background="{DynamicResource Field}" VerticalAlignment="Center">
+        <Border x:Name="Square" Width="19" Height="19" CornerRadius="{DynamicResource ControlCornerRadius}" BorderThickness="1" BorderBrush="{DynamicResource Muted}" Background="{DynamicResource Field}" VerticalAlignment="Center">
           <Path x:Name="Tick" Data="M 3,8 L 6,11 L 12,4" Stroke="{DynamicResource Canvas}" StrokeThickness="2" Visibility="Collapsed" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
         </Border>
         <ContentPresenter Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center"/>

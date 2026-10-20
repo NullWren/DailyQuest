@@ -1,0 +1,21 @@
+{
+  "format": "wrenfeed-theme",
+  "version": 1,
+  "id": "g-units",
+  "name": "G-Units",
+  "description": "Steel-blue and brass with a quietly confident wren wearing a tiny G medallion.",
+  "colors": {
+    "Canvas": "#121A23",
+    "Panel": "#1D2A35",
+    "Field": "#17232D",
+    "Edge": "#637888",
+    "Ink": "#F0F4ED",
+    "Muted": "#BDCDD3",
+    "Accent": "#E0BF76",
+    "Success": "#93D2AE"
+  },
+  "fonts": { "body": "Segoe UI", "display": "Georgia" },
+  "decoration": "chain",
+  "mark": "◇",
+  "mascot": "chain-wren"
+}

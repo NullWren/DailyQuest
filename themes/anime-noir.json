@@ -1,0 +1,21 @@
+{
+  "format": "wrenfeed-theme",
+  "version": 1,
+  "id": "anime-noir",
+  "name": "Anime Noir",
+  "description": "Original midnight action-panel styling with rose-red ink, sharp motion lines, and an abstract eye emblem.",
+  "colors": {
+    "Canvas": "#100F19",
+    "Panel": "#201B2A",
+    "Field": "#181421",
+    "Edge": "#66546B",
+    "Ink": "#F6F0F3",
+    "Muted": "#CCC1CA",
+    "Accent": "#F47DAB",
+    "Success": "#8AD9CC"
+  },
+  "fonts": { "body": "Segoe UI", "display": "Bahnschrift SemiCondensed" },
+  "decoration": "manga",
+  "mark": "✦",
+  "mascot": "manga-eye"
+}

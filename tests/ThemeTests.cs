@@ -11,6 +11,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Media.Effects;
 using System.Windows.Threading;
 using DailyQuest;
 
@@ -46,9 +47,12 @@ class ThemeTests
         var neon = ThemeManager.Parse(File.ReadAllBytes(args[0]));
         var ledger = ThemeManager.Parse(File.ReadAllBytes(args[1]));
         var template = ThemeManager.Parse(File.ReadAllBytes(args[2]));
+        var additions = args.Skip(4).Select(path => ThemeManager.Parse(File.ReadAllBytes(path))).ToList();
         Assert(neon.Id == "neon-aviary" && neon.Decoration == "circuit" && neon.DisplayFont == "Consolas", "Neon theme parses circuit look and display font");
         Assert(ledger.Id == "adventurers-ledger" && ledger.Decoration == "filigree" && ledger.Mascot == "wren", "Ledger theme enables ornate cards and small wren");
         Assert(template.Id == "my-theme" && template.Decoration == "none", "Repository theme template is valid");
+        Assert(additions.Select(t => t.Id).SequenceEqual(new[] { "anime-noir", "g-units", "sphynx-nook", "pixel-perch" }), "Four original new theme presets parse and use distinct IDs");
+        Assert(additions[0].Mascot == "manga-eye" && additions[1].Mascot == "chain-wren" && additions[2].Mascot == "sphynx" && additions[3].Mascot == "pixel-wren", "New themes select original built-in emblems");
         var original = ThemeManager.Brush("Canvas").Color;
         ThemeManager.Apply(neon);
         Assert(ThemeManager.Brush("Canvas").Color == neon.Colors["Canvas"] && ((SolidColorBrush)app.Resources["Canvas"]).Color == neon.Colors["Canvas"], "Theme changes live UI and WPF style colors");
@@ -61,8 +65,8 @@ class ThemeTests
         using (var storage = new Storage(root))
         {
             var manager = new ThemeManager(storage.Folder);
-            manager.Install(args[0]); manager.Install(args[1]);
-            Assert(manager.Installed().Count == 2 && manager.Find("neon-aviary").Name == "Neon Aviary", "Theme files install locally and can be found by ID");
+            manager.Install(args[0]); manager.Install(args[1]); foreach (var path in args.Skip(4)) manager.Install(path);
+            Assert(manager.Installed().Count == 6 && manager.Find("neon-aviary").Name == "Neon Aviary", "All six optional theme files install locally and can be found by ID");
             Assert(manager.Find("not-installed").Id == ThemeManager.DefaultId, "Missing optional theme falls back to Default");
             var journal = new Journal(); journal.SaveGame(new Game { Name = "Theme test quest" }, DateTime.Now, DateTime.UtcNow);
             var window = new QuestWindow(storage, journal) { Opacity = 0, ShowActivated = false }; window.Show();
@@ -95,9 +99,19 @@ class ThemeTests
                     list.SelectedItem = list.Items.Cast<ComboBoxItem>().Single(i => ((ThemeSpec)i.Tag).Id == "adventurers-ledger");
                     Assert(journal.Settings.Theme == "adventurers-ledger" && ThemeManager.Current.Id == "adventurers-ledger", "Settings saves and applies selected theme immediately");
                     Assert(Walk(window).OfType<Canvas>().Any(c => (string)c.ToolTip == "A little wren keeping watch" && c.Visibility == Visibility.Visible), "Ledger shows the small wren in the app header");
+                    opacity.Value = 20;
+                    Assert(Walk(window).OfType<TextBlock>().Any(t => t.Text == "Theme test quest" && t.Opacity == 1 && t.Effect is DropShadowEffect) && window.Opacity == 1, "Ledger quest text stays opaque with a contrast halo in background-only mode");
+                    opacity.Value = 100;
                     Capture(window, Path.Combine(root, "ledger.png"));
                     list.SelectedItem = list.Items.Cast<ComboBoxItem>().Single(i => ((ThemeSpec)i.Tag).Id == "neon-aviary");
                     Capture(window, Path.Combine(root, "neon.png"));
+                    foreach (var theme in additions)
+                    {
+                        list.SelectedItem = list.Items.Cast<ComboBoxItem>().Single(i => ((ThemeSpec)i.Tag).Id == theme.Id);
+                        Assert(ThemeManager.Current.Id == theme.Id && Walk(window).OfType<Canvas>().Any(c => c.ToolTip != null && c.Visibility == Visibility.Visible && c.ToolTip.ToString().Contains(theme.Mascot == "sphynx" ? "sphynx" : theme.Mascot == "chain-wren" ? "medallion" : theme.Mascot == "pixel-wren" ? "pixel" : "emblem")), theme.Name + " shows its own small emblem");
+                        if (theme.Id == "pixel-perch") Assert(((CornerRadius)app.Resources["ControlCornerRadius"]).TopLeft == 0 && Walk(window).OfType<Border>().Any(b => b.BorderThickness.Left == 2 && b.CornerRadius.TopLeft == 0), "Pixel theme uses square controls and cards");
+                        Capture(window, Path.Combine(root, theme.Id + ".png"));
+                    }
                     list.SelectedIndex = 0;
                     Assert(journal.Settings.Theme == ThemeManager.DefaultId && ThemeManager.Current.Id == ThemeManager.DefaultId, "Settings can restore Default without altering quests");
                     dialog.Close();

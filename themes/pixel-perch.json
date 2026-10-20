@@ -1,0 +1,21 @@
+{
+  "format": "wrenfeed-theme",
+  "version": 1,
+  "id": "pixel-perch",
+  "name": "Pixel Perch",
+  "description": "Square-edged retro quest tiles, blocky marks, and a tiny pixel wren.",
+  "colors": {
+    "Canvas": "#111524",
+    "Panel": "#222A3E",
+    "Field": "#181E30",
+    "Edge": "#6C7CA4",
+    "Ink": "#F7F3DF",
+    "Muted": "#C9CBD6",
+    "Accent": "#E8C46C",
+    "Success": "#9ADB96"
+  },
+  "fonts": { "body": "Consolas", "display": "Consolas" },
+  "decoration": "pixel",
+  "mark": "■",
+  "mascot": "pixel-wren"
+}

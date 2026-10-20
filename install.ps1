@@ -10,6 +10,9 @@ Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'README.md') -Destination (Join-
 $themeFolder = Join-Path $installFolder 'themes'
 New-Item -ItemType Directory -Path $themeFolder -Force | Out-Null
 Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'themes') -File | Copy-Item -Destination $themeFolder -Force
+$previewFolder = Join-Path $themeFolder 'previews'
+New-Item -ItemType Directory -Path $previewFolder -Force | Out-Null
+Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'themes\previews') -File | Copy-Item -Destination $previewFolder -Force
 $desktopFolder = [Environment]::GetFolderPath('DesktopDirectory')
 $shortcutPath = Join-Path $desktopFolder 'WrenFeed.lnk'
 $shellObject = New-Object -ComObject WScript.Shell

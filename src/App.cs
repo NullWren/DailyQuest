@@ -10,6 +10,7 @@ using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
 using System.Windows.Threading;
 using Microsoft.Win32;
 
@@ -62,11 +63,12 @@ namespace DailyQuest
         public static Border Card(UIElement child)
         {
             var decoration = ThemeManager.Current.Decoration;
-            var card = new Border { Background = Brush("Panel"), BorderBrush = Brush("Edge"), BorderThickness = new Thickness(decoration == "filigree" ? 2 : 1), CornerRadius = new CornerRadius(decoration == "none" ? 8 : decoration == "circuit" ? 4 : 3), Padding = new Thickness(14) };
+            var card = new Border { Background = Brush("Panel"), BorderBrush = Brush("Edge"), BorderThickness = new Thickness(decoration == "filigree" || decoration == "manga" || decoration == "pixel" ? 2 : 1), CornerRadius = new CornerRadius(decoration == "none" ? 8 : decoration == "circuit" ? 4 : decoration == "manga" ? 2 : decoration == "chain" ? 6 : decoration == "whiskers" ? 14 : decoration == "pixel" ? 0 : 3), Padding = new Thickness(14) };
             if (decoration == "none") { card.Child = child; return card; }
             var panel = new StackPanel();
             var trim = new DockPanel { Margin = new Thickness(0, -5, 0, 10) };
-            var mark = Text(decoration == "circuit" ? "◇ ── ◇ ─────" : "✦  ───  ✦  ───", 11, "Accent"); mark.Opacity = 0.8; mark.HorizontalAlignment = HorizontalAlignment.Right;
+            string trimText = decoration == "circuit" ? "◇ ── ◇ ─────" : decoration == "manga" ? "╱╱  ✦  ╲╲" : decoration == "chain" ? "◇ · ◇ · ◇" : decoration == "whiskers" ? "✧  ·  ✧" : decoration == "pixel" ? "▪ ▪ ▪  ■" : "✦  ───  ✦  ───";
+            var mark = Text(trimText, 11, "Accent"); mark.Opacity = 0.8; mark.HorizontalAlignment = HorizontalAlignment.Right;
             trim.Children.Add(mark); panel.Children.Add(trim); panel.Children.Add(child); card.Child = panel;
             return card;
         }
@@ -82,6 +84,45 @@ namespace DailyQuest
             add(new System.Windows.Shapes.Ellipse { Width = 17, Height = 17, Fill = Brush("Accent") }, 23, 3);
             add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 36,11 L 43,14 L 36,16 Z"), Fill = Brush("Success") }, 0, 0);
             add(new System.Windows.Shapes.Ellipse { Width = 2.8, Height = 2.8, Fill = Brush("Ink") }, 33, 9);
+            return bird;
+        }
+        public static Canvas ChainWren()
+        {
+            var bird = CuteWren(); bird.ToolTip = "A wren with a tiny G medallion";
+            bird.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 15,24 Q 23,32 32,23"), Stroke = Brush("Ink"), StrokeThickness = 1.5, Fill = Brushes.Transparent });
+            var pendant = new System.Windows.Shapes.Ellipse { Width = 10, Height = 10, Fill = Brush("Accent"), Stroke = Brush("Ink"), StrokeThickness = 1 };
+            Canvas.SetLeft(pendant, 19); Canvas.SetTop(pendant, 25); bird.Children.Add(pendant);
+            var letter = Text("G", 8, "Canvas"); letter.FontWeight = FontWeights.Bold; Canvas.SetLeft(letter, 21); Canvas.SetTop(letter, 24); bird.Children.Add(letter);
+            return bird;
+        }
+        public static Canvas Sphynx()
+        {
+            var cat = new Canvas { Width = 45, Height = 36, Margin = new Thickness(0, 0, 9, 0), ToolTip = "A small sphynx cat watching the quests" };
+            cat.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 6,24 L 5,2 L 15,12 Q 22,8 30,12 L 40,2 L 39,24 Q 34,34 23,34 Q 11,34 6,24 Z"), Fill = Brush("Accent"), Stroke = Brush("Ink"), StrokeThickness = 1.3, StrokeLineJoin = PenLineJoin.Round });
+            cat.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 9,7 L 11,17 L 16,14 Z M 36,7 L 34,17 L 29,14 Z"), Fill = Brush("Panel") });
+            cat.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 11,20 Q 16,16 20,21 M 27,21 Q 31,16 36,20 M 15,13 Q 22,10 30,13 M 17,27 L 11,27 M 29,27 L 35,27"), Stroke = Brush("Ink"), StrokeThickness = 1.2, Fill = Brushes.Transparent, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round });
+            cat.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 20,25 L 26,25 L 23,28 Z"), Fill = Brush("Panel") });
+            return cat;
+        }
+        public static Canvas MangaEye()
+        {
+            var eye = new Canvas { Width = 48, Height = 34, Margin = new Thickness(0, 0, 8, 0), ToolTip = "An original ink-and-speed-line emblem" };
+            eye.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 1,18 Q 22,-1 45,18 Q 22,36 1,18 Z"), Fill = Brush("Panel"), Stroke = Brush("Accent"), StrokeThickness = 2 });
+            eye.Children.Add(new System.Windows.Shapes.Ellipse { Width = 17, Height = 17, Fill = Brush("Accent"), Margin = new Thickness(16, 9, 0, 0) });
+            eye.Children.Add(new System.Windows.Shapes.Ellipse { Width = 7, Height = 7, Fill = Brush("Canvas"), Margin = new Thickness(21, 14, 0, 0) });
+            eye.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 0,4 L 12,8 M 39,6 L 48,2 M 2,31 L 14,27 M 37,28 L 47,32"), Stroke = Brush("Accent"), StrokeThickness = 1.4 });
+            return eye;
+        }
+        public static Canvas PixelWren()
+        {
+            var bird = new Canvas { Width = 43, Height = 35, Margin = new Thickness(0, 0, 10, 0), ToolTip = "A tiny pixel wren" };
+            Action<int, int, int, int, string> block = delegate(int x, int y, int w, int h, string color)
+            {
+                var pixel = new System.Windows.Shapes.Rectangle { Width = w, Height = h, Fill = Brush(color), SnapsToDevicePixels = true };
+                Canvas.SetLeft(pixel, x); Canvas.SetTop(pixel, y); bird.Children.Add(pixel);
+            };
+            block(3, 20, 8, 4, "Accent"); block(8, 16, 22, 12, "Accent"); block(14, 12, 18, 12, "Accent"); block(23, 7, 13, 13, "Accent");
+            block(34, 13, 8, 4, "Success"); block(28, 11, 4, 4, "Ink"); block(14, 21, 11, 5, "Success"); block(14, 28, 3, 5, "Ink"); block(26, 28, 3, 5, "Ink");
             return bird;
         }
         public static void SetupDialog(Window dialog, Window owner, string title, double width, double height)
@@ -107,7 +148,7 @@ namespace DailyQuest
         readonly TextBlock footer = UI.Text("Saved on this device · resets at midnight", 11, "Muted");
         readonly TextBlock brand = UI.Text("◇  W R E N F E E D", 11, "Accent");
         readonly TextBlock headerOrnament = UI.Text("", 11, "Accent");
-        readonly Canvas wrenBadge = UI.CuteWren();
+        readonly Canvas wrenBadge = new Canvas { Width = 52, Height = 36 };
         readonly Border fill = new Border { Height = 3, HorizontalAlignment = HorizontalAlignment.Left };
         readonly Border track = new Border { Height = 3 };
         readonly StackPanel dateArea = new StackPanel();
@@ -246,6 +287,31 @@ namespace DailyQuest
             Opacity = journal.Settings.BackgroundOnlyOpacity ? 1.0 : journal.Settings.WindowOpacity;
             shell.Background = Surface("Canvas");
             foreach (var card in cards.Children.OfType<Border>()) card.Background = Surface("Panel");
+            ApplyTextReadability();
+        }
+        static System.Collections.Generic.IEnumerable<T> Descendants<T>(DependencyObject parent) where T : DependencyObject
+        {
+            foreach (object child in LogicalTreeHelper.GetChildren(parent))
+            {
+                var element = child as DependencyObject;
+                if (element == null) continue;
+                var match = element as T; if (match != null) yield return match;
+                foreach (var nested in Descendants<T>(element)) yield return nested;
+            }
+        }
+        void ApplyTextReadability()
+        {
+            if (Content == null) return;
+            bool translucent = journal.Settings.BackgroundOnlyOpacity && journal.Settings.WindowOpacity < 1;
+            foreach (var line in Descendants<TextBlock>((DependencyObject)Content))
+            {
+                if (!translucent) { line.Effect = null; continue; }
+                var ink = line.Foreground as SolidColorBrush;
+                if (ink == null) continue;
+                var color = ink.Color;
+                bool dark = 0.2126 * color.R + 0.7152 * color.G + 0.0722 * color.B < 128;
+                line.Effect = new DropShadowEffect { Color = dark ? Colors.White : Colors.Black, BlurRadius = 4, ShadowDepth = 0, Opacity = 0.95 };
+            }
         }
         bool RefreshDay()
         {
@@ -280,7 +346,7 @@ namespace DailyQuest
             cards.Children.Clear(); dateArea.Children.Clear();
             todayButton.BorderBrush = UI.Brush(!history && !weekly ? "Accent" : "Edge"); weeklyButton.BorderBrush = UI.Brush(weekly ? "Accent" : "Edge"); historyButton.BorderBrush = UI.Brush(history ? "Accent" : "Edge");
             addButton.Visibility = history ? Visibility.Collapsed : Visibility.Visible;
-            if (weekly) { RenderWeekly(flash); return; }
+            if (weekly) { RenderWeekly(flash); ApplyTextReadability(); return; }
             var day = journal.Days.FirstOrDefault(d => d.Date == Journal.DateKey(history ? historyDate : DateTime.Now));
             var entries = day == null ? new System.Collections.Generic.List<GameResult>() : day.Games.Where(g => history || !g.Archived).ToList();
             if (history)
@@ -328,6 +394,7 @@ namespace DailyQuest
             {
                 var finished = UI.Text("✦  Daily quests complete. Well played.", 12, "Success"); finished.Margin = new Thickness(0, 10, 0, 8); finished.TextAlignment = TextAlignment.Center; cards.Children.Add(finished);
             }
+            ApplyTextReadability();
         }
         void RenderWeekly(string flash)
         {
@@ -408,9 +475,20 @@ namespace DailyQuest
         void RefreshThemeChrome()
         {
             brand.Text = ThemeManager.Current.Mark + "  W R E N F E E D";
-            wrenBadge.Visibility = ThemeManager.Current.Mascot == "wren" ? Visibility.Visible : Visibility.Collapsed;
+            wrenBadge.Children.Clear();
+            Canvas mascot = null;
+            switch (ThemeManager.Current.Mascot)
+            {
+                case "wren": mascot = UI.CuteWren(); break;
+                case "chain-wren": mascot = UI.ChainWren(); break;
+                case "sphynx": mascot = UI.Sphynx(); break;
+                case "pixel-wren": mascot = UI.PixelWren(); break;
+                case "manga-eye": mascot = UI.MangaEye(); break;
+            }
+            if (mascot != null) wrenBadge.Children.Add(mascot);
+            wrenBadge.Visibility = mascot == null ? Visibility.Collapsed : Visibility.Visible;
             headerOrnament.Visibility = ThemeManager.Current.Decoration == "none" ? Visibility.Collapsed : Visibility.Visible;
-            headerOrnament.Text = ThemeManager.Current.Decoration == "circuit" ? "── ◇ ────── ◇ ──" : "✦  ───  ◇  ───  ✦";
+            headerOrnament.Text = ThemeManager.Current.Decoration == "circuit" ? "── ◇ ────── ◇ ──" : ThemeManager.Current.Decoration == "manga" ? "╱╱   ✦   ╲╲   ╱╱   ✦   ╲╲" : ThemeManager.Current.Decoration == "chain" ? "◇ ─ ◇ ─ ◇ ─ ◇" : ThemeManager.Current.Decoration == "whiskers" ? "✧   ᵕ   ✧   ᵕ   ✧" : ThemeManager.Current.Decoration == "pixel" ? "▪ ▪ ■ ▪ ▪ ■ ▪ ▪" : "✦  ───  ◇  ───  ✦";
         }
         StackPanel GameRow(GameResult game)
         {

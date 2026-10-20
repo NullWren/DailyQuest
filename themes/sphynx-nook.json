@@ -1,0 +1,21 @@
+{
+  "format": "wrenfeed-theme",
+  "version": 1,
+  "id": "sphynx-nook",
+  "name": "Sphynx Nook",
+  "description": "Soft rose-and-cream colors, rounded quest cards, and a tiny illustrated hairless cat.",
+  "colors": {
+    "Canvas": "#F4EAE5",
+    "Panel": "#FFF7F1",
+    "Field": "#FFF9F5",
+    "Edge": "#997987",
+    "Ink": "#33272E",
+    "Muted": "#66525B",
+    "Accent": "#87445D",
+    "Success": "#416A50"
+  },
+  "fonts": { "body": "Segoe UI", "display": "Georgia" },
+  "decoration": "whiskers",
+  "mark": "✧",
+  "mascot": "sphynx"
+}
