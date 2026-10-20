@@ -57,6 +57,33 @@ class ModelTests
         Assert(journal.Today(now).Games.First(g => g.Id == simple.Id).Done, "Editing notes preserves simple game completion");
         journal.Move(simple.Id, -1); Assert(journal.Games[0].Id == simple.Id, "Game ordering persists independently of history");
         var cloned = Storage.Decode(Storage.Encode(journal)); Assert(cloned.Days.Count == journal.Days.Count && cloned.Games[0].Id == simple.Id, "JSON round trip retains history and stable IDs");
+        var weekly = new Game { Name = "Tears of Guthix", WeeklyReset = "completion-weekday", Lines = new System.Collections.Generic.List<QuestLine> { new QuestLine { Text = "Collect tears", Checkable = true }, new QuestLine { Text = "Claim XP", Checkable = true } } };
+        var sundayLate = new DateTime(2026, 10, 18, 23, 45, 0, DateTimeKind.Utc);
+        journal.SaveWeeklyGame(weekly, sundayLate);
+        var firstWeekly = journal.CurrentWeekly(weekly, sundayLate);
+        journal.ToggleWeeklyLine(weekly.Id, weekly.Lines[0].Id, true, sundayLate);
+        Assert(!firstWeekly.Result.Done, "Weekly subtask alone does not complete quest");
+        journal.ToggleWeeklyGame(weekly.Id, true, sundayLate);
+        Assert(firstWeekly.Result.Lines.All(l => l.Done), "Completing weekly game checks all subtasks");
+        Assert(Journal.NextWeeklyReset(weekly, firstWeekly) == new DateTime(2026, 10, 25, 0, 0, 0, DateTimeKind.Utc), "Completion-weekday resets at UTC midnight seven dates later");
+        Assert(journal.CurrentWeekly(weekly, new DateTime(2026, 10, 24, 23, 59, 0, DateTimeKind.Utc)).Id == firstWeekly.Id, "Weekly quest stays completed until exact UTC reset");
+        var secondWeekly = journal.CurrentWeekly(weekly, new DateTime(2026, 10, 25, 0, 0, 0, DateTimeKind.Utc));
+        Assert(secondWeekly.Id != firstWeekly.Id && !secondWeekly.Result.Done && firstWeekly.Result.Done, "Weekly rollover preserves completed history and resets progress");
+        var fixedGame = new Game { Name = "Fixed event", WeeklyReset = "fixed", FixedWeekdayUtc = (int)DayOfWeek.Thursday, FixedHourUtc = 18, FixedMinuteUtc = 30 };
+        Assert(Journal.FixedCycleStart(fixedGame, new DateTime(2026, 10, 22, 18, 29, 0, DateTimeKind.Utc)) == new DateTime(2026, 10, 15, 18, 30, 0, DateTimeKind.Utc), "Fixed weekly event waits until configured UTC time");
+        Assert(Journal.FixedCycleStart(fixedGame, new DateTime(2026, 10, 22, 18, 30, 0, DateTimeKind.Utc)) == new DateTime(2026, 10, 22, 18, 30, 0, DateTimeKind.Utc), "Fixed weekly event resets at configured UTC instant");
+        journal.SaveWeeklyGame(fixedGame, new DateTime(2026, 10, 22, 18, 29, 0, DateTimeKind.Utc));
+        var oldFixed = journal.CurrentWeekly(fixedGame, new DateTime(2026, 10, 22, 18, 29, 0, DateTimeKind.Utc));
+        journal.ToggleWeeklyGame(fixedGame.Id, true, new DateTime(2026, 10, 22, 18, 29, 0, DateTimeKind.Utc));
+        Assert(!journal.CurrentWeekly(fixedGame, new DateTime(2026, 10, 22, 18, 30, 0, DateTimeKind.Utc)).Result.Done && oldFixed.Result.Done, "Fixed weekly rollover archives prior completion");
+        var weeklyCopy = Storage.Decode(Storage.Encode(journal));
+        Assert(weeklyCopy.WeeklyRecords.Count == journal.WeeklyRecords.Count && weeklyCopy.WeeklyGames.Count == 2, "Weekly schedules and history survive JSON round trip");
+        weeklyCopy.ArchiveWeekly(weekly.Id, new DateTime(2026, 10, 25, 0, 0, 0, DateTimeKind.Utc));
+        Assert(weeklyCopy.WeeklyGames.First(g => g.Id == weekly.Id).Archived && firstWeekly.Result.Done, "Archiving weekly quest preserves completed history");
+        weeklyCopy.RestoreWeekly(weekly.Id, new DateTime(2026, 10, 25, 1, 0, 0, DateTimeKind.Utc));
+        Assert(!weeklyCopy.WeeklyGames.First(g => g.Id == weekly.Id).Archived, "Archived weekly quest can be restored");
+        var legacy = new Journal { Version = 1 }; var migrated = Storage.Decode(Storage.Encode(legacy));
+        Assert(migrated.Version == 2 && migrated.WeeklyGames.Count == 0 && migrated.WeeklyRecords.Count == 0, "Version 1 daily journal migrates to weekly-capable version 2");
         bool refused = false; cloned.Version = 99; try { Storage.Decode(Storage.Encode(cloned)); } catch (InvalidDataException) { refused = true; }
         Assert(refused, "Future schema versions are refused without overwrite");
         using (var store = new Storage(root))

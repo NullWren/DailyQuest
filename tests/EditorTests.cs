@@ -59,6 +59,39 @@ class EditorTests
         if (failure != null) throw failure;
         if (saved != true || revised.Result.Id != editor.Result.Id || revised.Result.Lines[0].Id != editor.Result.Lines[0].Id || revised.Result.Lines[0].Checkable) throw new Exception("Edit did not preserve IDs and convert task to note.");
         Console.WriteLine("PASS Editor reopens saved game, keeps stable IDs, and converts task to plain note");
+        var weekly = new GameEditor(owner, null, true) { Opacity = 0, ShowActivated = false };
+        weekly.Loaded += delegate
+        {
+            try
+            {
+                var controls = Walk(weekly).ToList();
+                controls.OfType<TextBox>().Single(t => AutomationProperties.GetName(t) == "Game name").Text = "Tears of Guthix";
+                controls.OfType<ComboBox>().Single(c => AutomationProperties.GetName(c) == "Weekly reset rule").SelectedIndex = 1;
+                controls.OfType<Button>().Single(b => (string)b.Content == "Save game").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+            catch (Exception e) { failure = e; weekly.Close(); }
+        };
+        saved = weekly.ShowDialog();
+        if (failure != null) throw failure;
+        if (saved != true || weekly.Result.WeeklyReset != "completion-weekday") throw new Exception("Weekly editor did not save completion-based rule.");
+        Console.WriteLine("PASS Weekly editor saves completion-based UTC reset rule");
+        var fixedWeekly = new GameEditor(owner, weekly.Result, true) { Opacity = 0, ShowActivated = false };
+        fixedWeekly.Loaded += delegate
+        {
+            try
+            {
+                var controls = Walk(fixedWeekly).ToList();
+                controls.OfType<ComboBox>().Single(c => AutomationProperties.GetName(c) == "Weekly reset rule").SelectedIndex = 0;
+                controls.OfType<ComboBox>().Single(c => AutomationProperties.GetName(c) == "Fixed reset day UTC").SelectedIndex = (int)DayOfWeek.Thursday;
+                controls.OfType<TextBox>().Single(t => AutomationProperties.GetName(t) == "Fixed reset time UTC").Text = "18:30";
+                controls.OfType<Button>().Single(b => (string)b.Content == "Save game").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+            catch (Exception e) { failure = e; fixedWeekly.Close(); }
+        };
+        saved = fixedWeekly.ShowDialog();
+        if (failure != null) throw failure;
+        if (saved != true || fixedWeekly.Result.WeeklyReset != "fixed" || fixedWeekly.Result.FixedWeekdayUtc != (int)DayOfWeek.Thursday || fixedWeekly.Result.FixedHourUtc != 18 || fixedWeekly.Result.FixedMinuteUtc != 30) throw new Exception("Weekly editor did not save fixed schedule.");
+        Console.WriteLine("PASS Weekly editor saves fixed UTC day and time");
         owner.Close(); app.Shutdown();
     }
 }

@@ -80,11 +80,13 @@ namespace DailyQuest
         readonly Border track = new Border { Height = 3 };
         readonly StackPanel dateArea = new StackPanel();
         readonly Button todayButton;
+        readonly Button weeklyButton;
         readonly Button historyButton;
         readonly Button addButton;
         readonly DispatcherTimer clock = new DispatcherTimer();
         string activeDate;
         bool history;
+        bool weekly;
         DateTime historyDate = DateTime.Today;
         double fraction;
         public QuestWindow(Storage storage, Journal journal)
@@ -106,16 +108,17 @@ namespace DailyQuest
             summary.Margin = new Thickness(0, 0, 0, 12); top.Children.Add(summary);
             track.Background = UI.Brush("Edge"); fill.Background = UI.Brush("Accent"); track.Child = fill; top.Children.Add(track); track.SizeChanged += delegate { fill.Width = Math.Max(0, track.ActualWidth * fraction); };
             var tabs = new Grid { Margin = new Thickness(0, 16, 0, 14) };
-            tabs.ColumnDefinitions.Add(new ColumnDefinition()); tabs.ColumnDefinitions.Add(new ColumnDefinition()); tabs.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            todayButton = UI.Button("Today", delegate { history = false; Render(null); }); todayButton.Margin = new Thickness(0, 0, 6, 0);
-            historyButton = UI.Button("History", delegate { history = true; historyDate = DateTime.Today; Render(null); }); historyButton.Margin = new Thickness(0, 0, 10, 0);
+            tabs.ColumnDefinitions.Add(new ColumnDefinition()); tabs.ColumnDefinitions.Add(new ColumnDefinition()); tabs.ColumnDefinitions.Add(new ColumnDefinition()); tabs.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            todayButton = UI.Button("Today", delegate { history = false; weekly = false; Render(null); }); todayButton.Margin = new Thickness(0, 0, 6, 0);
+            weeklyButton = UI.Button("Weekly", delegate { history = false; weekly = true; Render(null); }); weeklyButton.Margin = new Thickness(0, 0, 6, 0);
+            historyButton = UI.Button("History", delegate { history = true; weekly = false; historyDate = DateTime.Today; Render(null); }); historyButton.Margin = new Thickness(0, 0, 10, 0);
             addButton = UI.Button("+ Game", delegate { EditGame(null); }); UI.Primary(addButton); addButton.ToolTip = "Add game (Ctrl+N)";
-            Grid.SetColumn(historyButton, 1); Grid.SetColumn(addButton, 2); tabs.Children.Add(todayButton); tabs.Children.Add(historyButton); tabs.Children.Add(addButton); top.Children.Add(tabs);
+            Grid.SetColumn(weeklyButton, 1); Grid.SetColumn(historyButton, 2); Grid.SetColumn(addButton, 3); tabs.Children.Add(todayButton); tabs.Children.Add(weeklyButton); tabs.Children.Add(historyButton); tabs.Children.Add(addButton); top.Children.Add(tabs);
             top.Children.Add(dateArea);
             var bottom = new Border { BorderBrush = UI.Brush("Edge"), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(0, 12, 0, 0), Margin = new Thickness(0, 12, 0, 0), Child = footer };
             DockPanel.SetDock(bottom, Dock.Bottom); root.Children.Add(bottom);
             var scroll = new ScrollViewer { Content = cards, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled }; root.Children.Add(scroll);
-            activeDate = Journal.DateKey(DateTime.Now); journal.Today(DateTime.Now); storage.Save(journal);
+            activeDate = Journal.DateKey(DateTime.Now); journal.Today(DateTime.Now); foreach (var game in journal.WeeklyGames.Where(g => !g.Archived)) journal.CurrentWeekly(game, DateTime.UtcNow); storage.Save(journal);
             clock.Interval = TimeSpan.FromSeconds(3); clock.Tick += delegate { RefreshDay(); }; clock.Start();
             Activated += delegate { RefreshDay(); };
             Closing += delegate
@@ -128,7 +131,7 @@ namespace DailyQuest
             {
                 if (Keyboard.Modifiers != ModifierKeys.Control) return;
                 if (e.Key == Key.N) { EditGame(null); e.Handled = true; }
-                if (e.Key == Key.H) { history = !history; Render(null); e.Handled = true; }
+                if (e.Key == Key.H) { history = !history; if (history) weekly = false; Render(null); e.Handled = true; }
                 if (e.Key == Key.OemComma) { OpenSettings(); e.Handled = true; }
             };
             Render(null);
@@ -137,8 +140,14 @@ namespace DailyQuest
         bool RefreshDay()
         {
             string date = Journal.DateKey(DateTime.Now);
-            if (date == activeDate) return false;
-            if (Change(delegate { journal.Today(DateTime.Now); }, null)) { activeDate = date; footer.Text = "A new day. Your next quests await."; }
+            bool dailyChanged = date != activeDate;
+            bool weeklyChanged = journal.WeeklyGames.Where(g => !g.Archived).Any(g =>
+            {
+                var current = journal.WeeklyRecords.LastOrDefault(r => r.GameId == g.Id);
+                return current == null || (g.WeeklyReset == "fixed" && DateTime.Parse(current.CycleStartUtc).ToUniversalTime() != Journal.FixedCycleStart(g, DateTime.UtcNow)) || (g.WeeklyReset == "completion-weekday" && current.Result.Done && DateTime.UtcNow >= Journal.NextWeeklyReset(g, current));
+            });
+            if (!dailyChanged && !weeklyChanged) return false;
+            if (Change(delegate { journal.Today(DateTime.Now); foreach (var game in journal.WeeklyGames.Where(g => !g.Archived)) journal.CurrentWeekly(game, DateTime.UtcNow); }, null)) { activeDate = date; footer.Text = "New quests are ready."; }
             return true;
         }
         bool Change(Action action, string flash)
@@ -154,8 +163,9 @@ namespace DailyQuest
         void Render(string flash)
         {
             cards.Children.Clear(); dateArea.Children.Clear();
-            todayButton.BorderBrush = UI.Brush(history ? "Edge" : "Accent"); historyButton.BorderBrush = UI.Brush(history ? "Accent" : "Edge");
+            todayButton.BorderBrush = UI.Brush(!history && !weekly ? "Accent" : "Edge"); weeklyButton.BorderBrush = UI.Brush(weekly ? "Accent" : "Edge"); historyButton.BorderBrush = UI.Brush(history ? "Accent" : "Edge");
             addButton.Visibility = history ? Visibility.Collapsed : Visibility.Visible;
+            if (weekly) { RenderWeekly(flash); return; }
             var day = journal.Days.FirstOrDefault(d => d.Date == Journal.DateKey(history ? historyDate : DateTime.Now));
             var entries = day == null ? new System.Collections.Generic.List<GameResult>() : day.Games.Where(g => history || !g.Archived).ToList();
             if (!history) entries = entries.OrderBy(g => journal.Games.FindIndex(t => t.Id == g.Id)).ToList();
@@ -192,6 +202,48 @@ namespace DailyQuest
                 var finished = UI.Text("✦  Daily quests complete. Well played.", 12, "Success"); finished.Margin = new Thickness(0, 10, 0, 8); finished.TextAlignment = TextAlignment.Center; cards.Children.Add(finished);
             }
         }
+        void RenderWeekly(string flash)
+        {
+            var entries = journal.WeeklyGames.Where(g => !g.Archived).Select(g => new { Game = g, Record = journal.WeeklyRecords.LastOrDefault(r => r.GameId == g.Id) }).Where(x => x.Record != null).ToList();
+            int done = entries.Count(x => x.Record.Result.Done);
+            fraction = entries.Count == 0 ? 0 : (double)done / entries.Count; fill.Width = Math.Max(0, track.ActualWidth * fraction);
+            fill.Background = UI.Brush(entries.Count > 0 && done == entries.Count ? "Success" : "Accent");
+            heading.Text = "Your weekly quests";
+            summary.Text = done + " / " + entries.Count + " games complete";
+            footer.Text = "Saved on this device · weekly resets use UTC";
+            addButton.Content = "+ Game";
+            if (entries.Count == 0)
+            {
+                var empty = UI.Stack(); empty.Margin = new Thickness(10, 30, 10, 30);
+                var title = UI.Text("A new weekly adventure", 18, "Ink"); title.FontFamily = new FontFamily("Georgia"); title.TextAlignment = TextAlignment.Center; empty.Children.Add(title);
+                var copy = UI.Text("Add a weekly game and choose when its quest resets.", 13, "Muted"); copy.Margin = new Thickness(0, 10, 0, 16); copy.TextAlignment = TextAlignment.Center; empty.Children.Add(copy);
+                var add = UI.Button("+ Add a weekly game", delegate { EditGame(null); }); UI.Primary(add); add.HorizontalAlignment = HorizontalAlignment.Center; empty.Children.Add(add);
+                cards.Children.Add(UI.Card(empty));
+            }
+            foreach (var entry in entries)
+            {
+                var card = GameCard(entry.Record.Result, flash == entry.Game.Id);
+                var content = (StackPanel)card.Child;
+                string rule = entry.Game.WeeklyReset == "completion-weekday" ? "7 days after completion · 00:00 UTC" : "Every " + ((DayOfWeek)entry.Game.FixedWeekdayUtc) + " · " + entry.Game.FixedHourUtc.ToString("00") + ":" + entry.Game.FixedMinuteUtc.ToString("00") + " UTC";
+                var detail = UI.Text(rule, 11, "Accent"); detail.Margin = new Thickness(29, 8, 0, 0); content.Children.Add(detail);
+                if (entry.Record.Result.Done)
+                {
+                    var reset = Journal.NextWeeklyReset(entry.Game, entry.Record).ToLocalTime();
+                    var next = UI.Text("Next quest: " + reset.ToString("ddd, MMM d · h:mm tt") + " local", 11, "Muted"); next.Margin = new Thickness(29, 4, 0, 0); content.Children.Add(next);
+                }
+                cards.Children.Add(card);
+            }
+            var past = journal.WeeklyRecords.Where(r => r.Result.Done && !entries.Any(e => e.Record.Id == r.Id)).OrderByDescending(r => r.Result.CompletedUtc).Take(8).ToList();
+            if (past.Count > 0)
+            {
+                var title = UI.Text("PREVIOUS WEEKLY QUESTS", 11, "Accent"); title.Margin = new Thickness(0, 16, 0, 10); cards.Children.Add(title);
+                foreach (var record in past)
+                {
+                    var at = DateTime.Parse(record.Result.CompletedUtc, null, System.Globalization.DateTimeStyles.RoundtripKind).ToLocalTime();
+                    var note = UI.Text("✓  " + record.Result.Name + "  ·  " + at.ToString("MMM d, yyyy"), 12, "Muted"); note.Margin = new Thickness(3, 0, 0, 9); cards.Children.Add(note);
+                }
+            }
+        }
         Border GameCard(GameResult game, bool flash)
         {
             var content = UI.Stack(); var header = new DockPanel();
@@ -200,14 +252,14 @@ namespace DailyQuest
                 var menuButton = UI.Button("···", delegate { }); menuButton.Padding = new Thickness(5, 0, 5, 0); menuButton.MinHeight = 26; menuButton.Width = 29; menuButton.FontSize = 17; menuButton.ToolTip = "Edit or reorder " + game.Name; AutomationProperties.SetName(menuButton, "Options for " + game.Name);
                 var menu = new ContextMenu();
                 Action<string, Action> item = delegate(string label, Action action) { var mi = new MenuItem { Header = label }; mi.Click += delegate { action(); }; menu.Items.Add(mi); };
-                item("Edit game", delegate { EditGame(journal.Games.First(g => g.Id == game.Id)); });
-                item("Move up", delegate { Change(delegate { journal.Move(game.Id, -1); }, null); });
-                item("Move down", delegate { Change(delegate { journal.Move(game.Id, 1); }, null); });
+                item("Edit game", delegate { EditGame((weekly ? journal.WeeklyGames : journal.Games).First(g => g.Id == game.Id)); });
+                item("Move up", delegate { Change(delegate { if (weekly) journal.MoveWeekly(game.Id, -1); else journal.Move(game.Id, -1); }, null); });
+                item("Move down", delegate { Change(delegate { if (weekly) journal.MoveWeekly(game.Id, 1); else journal.Move(game.Id, 1); }, null); });
                 menu.Items.Add(new Separator());
                 item("Archive game", delegate
                 {
-                    if (MessageBox.Show(this, "Remove “" + game.Name + "” from your daily list?\n\nIts history will stay saved. You can restore it in Settings.", "Archive game", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
-                        Change(delegate { journal.Archive(game.Id, DateTime.Now); }, null);
+                    if (MessageBox.Show(this, "Remove “" + game.Name + "” from your " + (weekly ? "weekly" : "daily") + " list?\n\nIts history will stay saved. You can restore it in Settings.", "Archive game", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                        Change(delegate { if (weekly) journal.ArchiveWeekly(game.Id, DateTime.UtcNow); else journal.Archive(game.Id, DateTime.Now); }, null);
                 });
                 menuButton.Click += delegate { menu.PlacementTarget = menuButton; menu.IsOpen = true; };
                 DockPanel.SetDock(menuButton, Dock.Right); header.Children.Add(menuButton);
@@ -219,7 +271,7 @@ namespace DailyQuest
             {
                 if (RefreshDay()) return;
                 bool done = check.IsChecked == true;
-                if (Change(delegate { journal.ToggleGame(game.Id, done, DateTime.Now, DateTime.UtcNow); }, done ? game.Id : null)) footer.Text = done ? "Quest complete. Nicely done." : "Quest reopened.";
+                if (Change(delegate { if (weekly) journal.ToggleWeeklyGame(game.Id, done, DateTime.UtcNow); else journal.ToggleGame(game.Id, done, DateTime.Now, DateTime.UtcNow); }, done ? game.Id : null)) footer.Text = done ? "Quest complete. Nicely done." : "Quest reopened.";
             };
             header.Children.Add(check); content.Children.Add(header);
             if (!String.IsNullOrWhiteSpace(game.Description)) { var desc = UI.Text(game.Description, 12, "Muted"); desc.Margin = new Thickness(29, 4, 0, 3); content.Children.Add(desc); }
@@ -236,7 +288,7 @@ namespace DailyQuest
                         lineCheck.Click += delegate
                         {
                             if (RefreshDay()) return;
-                            Change(delegate { journal.ToggleLine(game.Id, lineId, lineCheck.IsChecked == true, DateTime.Now, DateTime.UtcNow); }, game.Id);
+                            Change(delegate { if (weekly) journal.ToggleWeeklyLine(game.Id, lineId, lineCheck.IsChecked == true, DateTime.UtcNow); else journal.ToggleLine(game.Id, lineId, lineCheck.IsChecked == true, DateTime.Now, DateTime.UtcNow); }, game.Id);
                         };
                         subs.Children.Add(lineCheck);
                     }
@@ -256,11 +308,11 @@ namespace DailyQuest
         }
         void EditGame(Game game)
         {
-            var editor = new GameEditor(this, game);
+            var editor = new GameEditor(this, game, weekly);
             if (editor.ShowDialog() == true)
             {
                 history = false;
-                Change(delegate { journal.SaveGame(editor.Result, DateTime.Now, DateTime.UtcNow); }, null);
+                Change(delegate { if (weekly) journal.SaveWeeklyGame(editor.Result, DateTime.UtcNow); else journal.SaveGame(editor.Result, DateTime.Now, DateTime.UtcNow); }, null);
             }
         }
         void OpenSettings()
@@ -275,6 +327,7 @@ namespace DailyQuest
             animate.Click += delegate { if (!Change(delegate { journal.Settings.Animate = animate.IsChecked == true; }, null)) animate.IsChecked = journal.Settings.Animate; };
             stack.Children.Add(pin); stack.Children.Add(animate);
             stack.Children.Add(UI.Label("DAILY RESET")); stack.Children.Add(UI.Text("Local midnight. Progress saves immediately, and previous days remain in History.", 12, "Muted"));
+            stack.Children.Add(UI.Label("WEEKLY RESET")); stack.Children.Add(UI.Text("Choose a fixed UTC day and time, or the same UTC weekday seven days after completion. Weekly completion history appears on the Weekly tab.", 12, "Muted"));
             stack.Children.Add(UI.Label("YOUR DATA")); stack.Children.Add(UI.Text("Stored only on this PC. No account or internet needed. A previous-save backup is kept automatically.", 12, "Muted"));
             var buttons = new WrapPanel { Margin = new Thickness(0, 12, 0, 0) };
             var export = UI.Button("Export backup", delegate { Export(dialog); }); export.Margin = new Thickness(0, 0, 8, 8); buttons.Children.Add(export);
@@ -292,6 +345,12 @@ namespace DailyQuest
                     var restore = UI.Button("Restore", delegate { if (Change(delegate { journal.Restore(id, DateTime.Now, DateTime.UtcNow); }, null)) renderArchived(); }); DockPanel.SetDock(restore, Dock.Right); row.Children.Add(restore);
                     var label = UI.Text(game.Name, 12, "Ink"); label.Margin = new Thickness(0, 5, 8, 0); row.Children.Add(label); archived.Children.Add(row);
                 }
+                foreach (var game in journal.WeeklyGames.Where(g => g.Archived).ToList())
+                {
+                    var row = new DockPanel { Margin = new Thickness(0, 4, 0, 4) }; string id = game.Id;
+                    var restore = UI.Button("Restore", delegate { if (Change(delegate { journal.RestoreWeekly(id, DateTime.UtcNow); }, null)) renderArchived(); }); DockPanel.SetDock(restore, Dock.Right); row.Children.Add(restore);
+                    var label = UI.Text(game.Name + " · Weekly", 12, "Ink"); label.Margin = new Thickness(0, 5, 8, 0); row.Children.Add(label); archived.Children.Add(row);
+                }
                 if (archived.Children.Count == 0) archived.Children.Add(UI.Text("No archived games.", 12, "Muted"));
             }; renderArchived();
             var close = UI.Button("Done", delegate { dialog.Close(); }); close.HorizontalAlignment = HorizontalAlignment.Right; close.Margin = new Thickness(0, 22, 0, 0); UI.Primary(close); stack.Children.Add(close);
@@ -305,7 +364,7 @@ namespace DailyQuest
             try
             {
                 if (IsLiveFile(picker.FileName)) throw new IOException("Choose a location outside the live journal files.");
-                File.WriteAllBytes(picker.FileName, Storage.Encode(journal)); MessageBox.Show(owner, "Your games, settings, and daily history have been exported.", "Backup exported");
+                File.WriteAllBytes(picker.FileName, Storage.Encode(journal)); MessageBox.Show(owner, "Your games, settings, and history have been exported.", "Backup exported");
             } catch (Exception e) { MessageBox.Show(owner, e.Message, "Export failed"); }
         }
         bool IsLiveFile(string path)
@@ -319,9 +378,9 @@ namespace DailyQuest
             try
             {
                 var restored = Storage.Decode(File.ReadAllBytes(picker.FileName));
-                if (MessageBox.Show(owner, "Replace your current journal with this backup?\n\n" + restored.Games.Count(g => !g.Archived) + " active games · " + restored.Days.Count + " recorded days\n\nA separate copy of your current journal will be kept in the data folder.", "Restore backup", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+                if (MessageBox.Show(owner, "Replace your current journal with this backup?\n\n" + restored.Games.Count(g => !g.Archived) + " daily games · " + restored.WeeklyGames.Count(g => !g.Archived) + " weekly games · " + restored.Days.Count + " recorded days\n\nA separate copy of your current journal will be kept in the data folder.", "Restore backup", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
                 File.WriteAllBytes(Path.Combine(storage.Folder, "before-restore-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-ffff") + ".json"), Storage.Encode(journal));
-                if (Change(delegate { journal = restored; journal.Today(DateTime.Now); }, null)) { Topmost = journal.Settings.AlwaysOnTop; owner.Close(); }
+                if (Change(delegate { journal = restored; journal.Today(DateTime.Now); foreach (var game in journal.WeeklyGames.Where(g => !g.Archived)) journal.CurrentWeekly(game, DateTime.UtcNow); }, null)) { Topmost = journal.Settings.AlwaysOnTop; owner.Close(); }
             } catch (Exception e) { MessageBox.Show(owner, e.Message, "Restore failed"); }
         }
     }
@@ -331,20 +390,43 @@ namespace DailyQuest
         readonly string gameId;
         readonly TextBox name;
         readonly TextBox description;
+        readonly bool isWeekly;
+        ComboBox resetRule;
+        ComboBox resetDay;
+        TextBox resetTime;
+        StackPanel fixedOptions;
         readonly StackPanel rows = UI.Stack();
         readonly System.Collections.Generic.List<LineEditor> lines = new System.Collections.Generic.List<LineEditor>();
-        public GameEditor(Window owner, Game game)
+        public GameEditor(Window owner, Game game) : this(owner, game, false) { }
+        public GameEditor(Window owner, Game game, bool weekly)
         {
+            isWeekly = weekly;
             gameId = game == null ? Guid.NewGuid().ToString("N") : game.Id;
-            UI.SetupDialog(this, owner, game == null ? "Daily Quest · Add game" : "Daily Quest · Edit game", 510, 630);
+            UI.SetupDialog(this, owner, game == null ? "Daily Quest · Add game" : "Daily Quest · Edit game", 510, weekly ? 720 : 630);
             var root = new DockPanel { Margin = new Thickness(24) }; Content = root;
             var actions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 18, 0, 0) };
             var cancel = UI.Button("Cancel", delegate { DialogResult = false; }); cancel.Margin = new Thickness(0, 0, 8, 0); cancel.IsCancel = true; actions.Children.Add(cancel);
             var save = UI.Button("Save game", Save); UI.Primary(save); save.IsDefault = true; actions.Children.Add(save); DockPanel.SetDock(actions, Dock.Bottom); root.Children.Add(actions);
             var stack = UI.Stack();
-            var title = UI.Text(game == null ? "A new daily quest" : "Refine your quest", 23, "Ink"); title.FontFamily = new FontFamily("Georgia"); stack.Children.Add(title);
+            var title = UI.Text(game == null ? (weekly ? "A new weekly quest" : "A new daily quest") : "Refine your quest", 23, "Ink"); title.FontFamily = new FontFamily("Georgia"); stack.Children.Add(title);
             stack.Children.Add(UI.Label("GAME NAME")); name = UI.Field(game == null ? "" : game.Name, "Game name", 80); stack.Children.Add(name);
             stack.Children.Add(UI.Label("SHORT DESCRIPTION  ·  OPTIONAL")); description = UI.Field(game == null ? "" : game.Description, "Short description", 220); description.TextWrapping = TextWrapping.Wrap; description.MinHeight = 60; description.AcceptsReturn = true; stack.Children.Add(description);
+            if (weekly)
+            {
+                stack.Children.Add(UI.Label("WEEKLY RESET RULE"));
+                resetRule = new ComboBox { MinHeight = 33 }; AutomationProperties.SetName(resetRule, "Weekly reset rule");
+                resetRule.Items.Add("Fixed UTC day and time"); resetRule.Items.Add("Seven days after completion (UTC weekday)");
+                resetRule.SelectedIndex = game != null && game.WeeklyReset == "completion-weekday" ? 1 : 0; stack.Children.Add(resetRule);
+                fixedOptions = UI.Stack();
+                fixedOptions.Children.Add(UI.Label("RESET DAY (UTC)")); resetDay = new ComboBox { MinHeight = 33 }; AutomationProperties.SetName(resetDay, "Fixed reset day UTC");
+                foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek))) resetDay.Items.Add(day.ToString());
+                resetDay.SelectedIndex = game == null ? 0 : game.FixedWeekdayUtc; fixedOptions.Children.Add(resetDay);
+                fixedOptions.Children.Add(UI.Label("RESET TIME (HH:MM UTC)")); resetTime = UI.Field(game == null ? "00:00" : game.FixedHourUtc.ToString("00") + ":" + game.FixedMinuteUtc.ToString("00"), "Fixed reset time UTC", 5); fixedOptions.Children.Add(resetTime);
+                stack.Children.Add(fixedOptions);
+                var ruleHint = UI.Text("For Tears of Guthix, choose “Seven days after completion.” It becomes available at 00:00 UTC on the same weekday next week.", 11, "Muted"); ruleHint.Margin = new Thickness(0, 8, 0, 0); stack.Children.Add(ruleHint);
+                resetRule.SelectionChanged += delegate { fixedOptions.Visibility = resetRule.SelectedIndex == 0 ? Visibility.Visible : Visibility.Collapsed; };
+                fixedOptions.Visibility = resetRule.SelectedIndex == 0 ? Visibility.Visible : Visibility.Collapsed;
+            }
             stack.Children.Add(UI.Label("ADDITIONAL LINES  ·  OPTIONAL"));
             var info = UI.Text("Use a line for a note or a task. Enable “Checkbox” for tasks you want to check off individually.", 12, "Muted"); info.Margin = new Thickness(0, 0, 0, 12); stack.Children.Add(info); stack.Children.Add(rows);
             if (game != null) foreach (var line in game.Lines) AddLine(line);
@@ -366,7 +448,14 @@ namespace DailyQuest
         void Save()
         {
             if (String.IsNullOrWhiteSpace(name.Text)) { MessageBox.Show(this, "Give this game a name first.", "Game name required"); name.Focus(); return; }
-            Result = new Game { Id = gameId, Name = name.Text.Trim(), Description = description.Text.Trim(), Lines = lines.Where(l => !String.IsNullOrWhiteSpace(l.Text.Text)).Select(l => new QuestLine { Id = l.Id, Text = l.Text.Text.Trim(), Checkable = l.Checkable.IsChecked == true }).ToList() };
+            int hour = 0, minute = 0;
+            if (isWeekly && resetRule.SelectedIndex == 0)
+            {
+                var parts = resetTime.Text.Split(':');
+                if (parts.Length != 2 || parts[0].Length != 2 || parts[1].Length != 2 || !int.TryParse(parts[0], out hour) || !int.TryParse(parts[1], out minute) || hour > 23 || minute > 59 || hour < 0 || minute < 0)
+                { MessageBox.Show(this, "Enter a UTC reset time in 24-hour HH:MM format, such as 00:00 or 18:30.", "Invalid reset time"); resetTime.Focus(); return; }
+            }
+            Result = new Game { Id = gameId, Name = name.Text.Trim(), Description = description.Text.Trim(), Lines = lines.Where(l => !String.IsNullOrWhiteSpace(l.Text.Text)).Select(l => new QuestLine { Id = l.Id, Text = l.Text.Text.Trim(), Checkable = l.Checkable.IsChecked == true }).ToList(), WeeklyReset = isWeekly && resetRule.SelectedIndex == 1 ? "completion-weekday" : "fixed", FixedWeekdayUtc = isWeekly ? resetDay.SelectedIndex : 0, FixedHourUtc = hour, FixedMinuteUtc = minute };
             DialogResult = true;
         }
         sealed class LineEditor { public string Id; public TextBox Text; public CheckBox Checkable; }

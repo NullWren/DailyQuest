@@ -1,6 +1,6 @@
 # Daily Quest
 
-A small, offline Windows quest log for daily games. Launch **Daily Quest** from the desktop shortcut. No login, internet connection, server, browser, package manager, or subscription is involved.
+A small, offline Windows quest log for daily and weekly games. Launch **Daily Quest** from the desktop shortcut. No login, internet connection, server, browser, package manager, or subscription is involved.
 
 ## Using it
 
@@ -8,8 +8,9 @@ A small, offline Windows quest log for daily games. Launch **Daily Quest** from 
 - Check the game to complete all its tasks. Completing every checkable task automatically completes the game. Unchecking the game clears its tasks; unchecking one task reopens the game.
 - The **···** menu edits, reorders, or archives a game. Archiving keeps its history. Restore archived games in Settings.
 - **History** shows a read-only snapshot for a date. Past game names, descriptions, task text, and results stay intact when you change today's list. Today is updated as you edit it.
+- **Weekly** has its own game list and recent completion history. Each weekly game can reset on a fixed UTC weekday and time, or at **00:00 UTC on the seventh day after its last completion**. The second option suits Tears of Guthix: a completion on Sunday UTC becomes available the following Sunday at 00:00 UTC. The tab shows the next reset in your local time after completion.
 - The checklist resets at **local midnight**, including while the window stays open. If the app is closed, the next launch creates the current day's list. Unopened days have no recorded result and are never assumed complete. The app uses your Windows local date/time.
-- Settings includes **always on top**, completion animations, and backup export/restore. Restoring a backup replaces the journal, after confirmation, and preserves a separate copy of the journal being replaced.
+- Settings includes **always on top**, completion animations, and backup export/restore. Backups include daily and weekly games and their history. Restoring a backup replaces the journal, after confirmation, and preserves a separate copy of the journal being replaced.
 - Resize the window to suit your list. Closing the window exits the app; it does not keep running in the tray. Window size is remembered.
 - Keyboard: **Ctrl+N** adds a game, **Ctrl+H** toggles History, **Ctrl+,** opens Settings, **Esc** closes a dialog.
 
@@ -25,7 +26,7 @@ These local app/data paths are outside this source folder, which is under OneDri
 
 ## Development
 
-- `src/Model.cs`: plain data types, checklist rules, dated snapshots, and storage. Stable game/line IDs and UTC completion timestamps support future streak calculations. Day keys remain local calendar dates.
+- `src/Model.cs`: plain data types, checklist rules, dated snapshots, weekly schedules, and storage. Stable game/line IDs and UTC completion timestamps support future streak calculations. Daily day keys remain local calendar dates. Journals from version 1 migrate to version 2 on load.
 - `src/App.cs`: WPF windows and interactions. No third-party runtime packages.
 - `src/Theme.xaml`: colors, fonts, and reusable control styles. One quest-log preset ships initially. Additional skins can use separate resource dictionaries without changing stored completion history.
 - `tests/ModelTests.cs`: isolated model/storage tests; generates a separate UI fixture with example games.
@@ -38,6 +39,6 @@ The current shareable Windows package is in `release/DailyQuest.zip`. It contain
 
 For isolated testing: `DailyQuest.exe --data-dir "C:\path\to\test-folder"`. The desktop shortcut uses the normal local data folder and starts with no sample games.
 
-## Deliberate first-version boundaries
+## Future additions
 
-Streak displays, additional preset skins, per-game reset schedules, notifications, and syncing are not implemented. History is recorded at game and optional subtask level, with stable IDs and a versioned JSON schema, so these features have room to grow. Editing historical completions is intentionally unavailable in this first version.
+Streak displays, additional preset skins, notifications, and syncing are not implemented. History is recorded at game and optional subtask level, with stable IDs and a versioned JSON schema, so these features have room to grow. Editing historical completions is unavailable.
