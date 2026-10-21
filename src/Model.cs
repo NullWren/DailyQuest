@@ -70,6 +70,8 @@ namespace DailyQuest
         [DataMember] public bool BackgroundOnlyOpacity;
         [DataMember] public double Width = 430;
         [DataMember] public double Height = 720;
+        [DataMember(EmitDefaultValue = false)] public double? WindowLeft;
+        [DataMember(EmitDefaultValue = false)] public double? WindowTop;
     }
     [DataContract] public class Journal
     {
@@ -336,6 +338,13 @@ namespace DailyQuest
             if (journal.Games == null || journal.Days == null || journal.Settings == null) throw new InvalidDataException("The journal is missing required data.");
             if (journal.Settings.WindowOpacity == 0) journal.Settings.WindowOpacity = 1.0; // Journals saved before the opacity setting.
             if (Double.IsNaN(journal.Settings.WindowOpacity) || Double.IsInfinity(journal.Settings.WindowOpacity) || journal.Settings.WindowOpacity < 0.2 || journal.Settings.WindowOpacity > 1.0) throw new InvalidDataException("Invalid window opacity setting.");
+            if (!journal.Settings.WindowLeft.HasValue || !journal.Settings.WindowTop.HasValue ||
+                Double.IsNaN(journal.Settings.WindowLeft.Value) || Double.IsInfinity(journal.Settings.WindowLeft.Value) ||
+                Double.IsNaN(journal.Settings.WindowTop.Value) || Double.IsInfinity(journal.Settings.WindowTop.Value))
+            {
+                journal.Settings.WindowLeft = null;
+                journal.Settings.WindowTop = null;
+            }
             if (journal.Version == 1) { journal.WeeklyGames = new List<Game>(); journal.WeeklyRecords = new List<WeeklyRecord>(); }
             if (journal.WeeklyGames == null || journal.WeeklyRecords == null) throw new InvalidDataException("The journal is missing weekly data.");
             if (journal.Version < 3) journal.DailyUtcRecords = new List<WeeklyRecord>();

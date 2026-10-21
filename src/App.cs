@@ -13,9 +13,29 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Threading;
 using Microsoft.Win32;
+using Forms = System.Windows.Forms;
 
 namespace DailyQuest
 {
+    public static class WindowPlacement
+    {
+        public static Point? Restore(double left, double top, double width, double height, System.Collections.Generic.IEnumerable<Rect> workAreas)
+        {
+            var saved = new Rect(left, top, width, height);
+            Rect best = Rect.Empty;
+            double visible = 0;
+            foreach (var area in workAreas)
+            {
+                var intersection = Rect.Intersect(saved, area);
+                double covered = intersection.IsEmpty ? 0 : intersection.Width * intersection.Height;
+                if (covered > visible) { visible = covered; best = area; }
+            }
+            // A missing display or a sliver left on another display should reopen centered.
+            if (visible < width * height / 2 || best.IsEmpty) return null;
+            return new Point(Math.Max(best.Left, Math.Min(left, best.Right - width)),
+                Math.Max(best.Top, Math.Min(top, best.Bottom - height)));
+        }
+    }
     public static class Program
     {
         [STAThread] public static void Main(string[] args)
@@ -258,6 +278,20 @@ namespace DailyQuest
             Width = Math.Max(350, Math.Min(journal.Settings.Width, SystemParameters.WorkArea.Width));
             Height = Math.Max(440, Math.Min(journal.Settings.Height, SystemParameters.WorkArea.Height - 35));
             MinWidth = 350; MinHeight = 440; WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            SourceInitialized += delegate
+            {
+                if (!journal.Settings.WindowLeft.HasValue || !journal.Settings.WindowTop.HasValue) return;
+                var source = PresentationSource.FromVisual(this);
+                if (source == null || source.CompositionTarget == null) return;
+                var pixelsToDips = source.CompositionTarget.TransformFromDevice;
+                var workAreas = Forms.Screen.AllScreens.Select(screen =>
+                {
+                    var bounds = screen.WorkingArea;
+                    return new Rect(pixelsToDips.Transform(new Point(bounds.Left, bounds.Top)), pixelsToDips.Transform(new Point(bounds.Right, bounds.Bottom)));
+                });
+                var restored = WindowPlacement.Restore(journal.Settings.WindowLeft.Value, journal.Settings.WindowTop.Value, Width, Height, workAreas);
+                if (restored.HasValue) { WindowStartupLocation = WindowStartupLocation.Manual; Left = restored.Value.X; Top = restored.Value.Y; }
+            };
             Topmost = journal.Settings.AlwaysOnTop;
             WindowStyle = WindowStyle.None; AllowsTransparency = true; Background = Brushes.Transparent;
             BuildChrome();
@@ -291,7 +325,16 @@ namespace DailyQuest
             Closing += delegate
             {
                 clock.Stop();
-                try { if (WindowState == WindowState.Normal) { journal.Settings.Width = Width; journal.Settings.Height = Height; } storage.Save(journal); }
+                try
+                {
+                    var bounds = WindowState == WindowState.Normal ? new Rect(Left, Top, Width, Height) : RestoreBounds;
+                    if (!bounds.IsEmpty && !Double.IsNaN(bounds.Left) && !Double.IsNaN(bounds.Top) && bounds.Width >= MinWidth && bounds.Height >= MinHeight)
+                    {
+                        journal.Settings.Width = bounds.Width; journal.Settings.Height = bounds.Height;
+                        journal.Settings.WindowLeft = bounds.Left; journal.Settings.WindowTop = bounds.Top;
+                    }
+                    storage.Save(journal);
+                }
                 catch (Exception e) { MessageBox.Show(this, "Could not save window preferences. Previously saved progress is still on disk.\n\n" + e.Message, "WrenFeed"); }
             };
             PreviewKeyDown += delegate(object sender, KeyEventArgs e)

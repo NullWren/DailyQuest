@@ -87,6 +87,11 @@ class ThemeTests
         Assert(ThemeManager.Brush("Canvas").Color == ledger.Colors["Canvas"] && ((FontFamily)app.Resources["BodyFont"]).Source == "Georgia", "Switching themes changes colors and body font");
         ThemeManager.Apply(ThemeManager.Default);
         Assert(ThemeManager.Brush("Canvas").Color == original, "Default restores original palette");
+        var twoScreens = new[] { new Rect(0, 0, 1920, 1040), new Rect(1920, 0, 1920, 1040) };
+        Assert(WindowPlacement.Restore(2100, 120, 430, 720, twoScreens) == new Point(2100, 120), "Window placement preserves a position on a second display");
+        Assert(!WindowPlacement.Restore(2100, 120, 430, 720, twoScreens.Take(1)).HasValue, "Disconnected display falls back to a centered window");
+        Assert(WindowPlacement.Restore(1700, 120, 430, 720, twoScreens.Take(1)) == new Point(1490, 120), "Partly visible window is brought fully on-screen");
+        Assert(WindowPlacement.Restore(-1300, 60, 430, 720, new[] { new Rect(-1600, 0, 1600, 900) }) == new Point(-1300, 60), "Left-hand display position remains valid");
         string root = Path.GetFullPath(args[3]);
         Directory.CreateDirectory(root);
         using (var storage = new Storage(root))
@@ -173,7 +178,20 @@ class ThemeTests
             if (failure != null) throw failure;
             var saved = Storage.Decode(File.ReadAllBytes(storage.DataPath));
             Assert(journal.Games.Count == 1 && saved.Settings.Theme == ThemeManager.DefaultId && saved.Settings.BackgroundOnlyOpacity && saved.Settings.WindowOpacity == 1, "Theme and visibility switching leave quest data intact and persist selection");
+            var visibleArea = SystemParameters.WorkArea;
+            var expectedLeft = Math.Max(visibleArea.Left, Math.Min(visibleArea.Left + 35, visibleArea.Right - window.Width));
+            var expectedTop = Math.Max(visibleArea.Top, Math.Min(visibleArea.Top + 45, visibleArea.Bottom - window.Height));
+            window.Left = expectedLeft; window.Top = expectedTop;
             window.Close();
+            var positioned = Storage.Decode(File.ReadAllBytes(storage.DataPath));
+            Assert(positioned.Settings.WindowLeft == expectedLeft && positioned.Settings.WindowTop == expectedTop, "Closing saves the quest-log position");
+            var reopened = new QuestWindow(storage, positioned) { Opacity = 0, ShowActivated = false }; reopened.Show();
+            Assert(Math.Abs(reopened.Left - expectedLeft) < 1 && Math.Abs(reopened.Top - expectedTop) < 1, "Quest log reopens at its saved position");
+            reopened.Close();
+            positioned.Settings.WindowLeft = 1000000; positioned.Settings.WindowTop = 1000000;
+            var recovered = new QuestWindow(storage, positioned) { Opacity = 0, ShowActivated = false }; recovered.Show();
+            Assert(recovered.WindowStartupLocation == WindowStartupLocation.CenterScreen && recovered.Left >= visibleArea.Left && recovered.Left < visibleArea.Right && recovered.Top >= visibleArea.Top && recovered.Top < visibleArea.Bottom, "Missing monitor reopens the quest log on-screen");
+            recovered.Close();
         }
         string valid = File.ReadAllText(args[2]);
         Reject(valid.Replace("\"Canvas\": \"#12151C\"", "\"Canvas\": \"not-a-color\""), "Malformed color is rejected");

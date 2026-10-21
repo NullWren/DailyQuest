@@ -57,6 +57,13 @@ class ModelTests
         Assert(journal.Today(now).Games.First(g => g.Id == simple.Id).Done, "Editing notes preserves simple game completion");
         journal.Move(simple.Id, -1); Assert(journal.Games[0].Id == simple.Id, "Game ordering persists independently of history");
         var cloned = Storage.Decode(Storage.Encode(journal)); Assert(cloned.Days.Count == journal.Days.Count && cloned.Games[0].Id == simple.Id, "JSON round trip retains history and stable IDs");
+        Assert(!cloned.Settings.WindowLeft.HasValue && !cloned.Settings.WindowTop.HasValue, "Existing journals without a saved window position still load");
+        journal.Settings.WindowLeft = -280; journal.Settings.WindowTop = 135;
+        var placed = Storage.Decode(Storage.Encode(journal));
+        Assert(placed.Settings.WindowLeft == -280 && placed.Settings.WindowTop == 135, "Window position survives JSON round trip, including a left-hand monitor");
+        placed.Settings.WindowTop = null;
+        var partialPosition = Storage.Decode(Storage.Encode(placed));
+        Assert(!partialPosition.Settings.WindowLeft.HasValue && !partialPosition.Settings.WindowTop.HasValue, "Incomplete saved window position falls back safely");
         var weekly = new Game { Name = "Tears of Guthix", WeeklyReset = "completion-weekday", Lines = new System.Collections.Generic.List<QuestLine> { new QuestLine { Text = "Collect tears", Checkable = true }, new QuestLine { Text = "Claim XP", Checkable = true } } };
         var sundayLate = new DateTime(2026, 10, 18, 23, 45, 0, DateTimeKind.Utc);
         journal.SaveWeeklyGame(weekly, sundayLate);
