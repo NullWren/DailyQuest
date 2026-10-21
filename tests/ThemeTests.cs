@@ -24,6 +24,32 @@ class ThemeTests
         yield return root;
         foreach (object child in LogicalTreeHelper.GetChildren(root)) if (child is DependencyObject) foreach (var descendant in Walk((DependencyObject)child)) yield return descendant;
     }
+    static double Luminance(Color color)
+    {
+        double[] channels = { color.R / 255.0, color.G / 255.0, color.B / 255.0 };
+        for (int i = 0; i < channels.Length; i++) channels[i] = channels[i] <= 0.04045 ? channels[i] / 12.92 : Math.Pow((channels[i] + 0.055) / 1.055, 2.4);
+        return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+    }
+    static double Contrast(Color first, Color second)
+    {
+        double a = Luminance(first), b = Luminance(second);
+        return (Math.Max(a, b) + 0.05) / (Math.Min(a, b) + 0.05);
+    }
+    static Color Blend(Color foreground, byte background, double opacity)
+    {
+        return Color.FromRgb((byte)Math.Round(foreground.R * opacity + background * (1 - opacity)),
+            (byte)Math.Round(foreground.G * opacity + background * (1 - opacity)),
+            (byte)Math.Round(foreground.B * opacity + background * (1 - opacity)));
+    }
+    static void AssertReadableText(QuestWindow window, string theme)
+    {
+        var lines = Walk(window).OfType<TextBlock>().Where(t => !String.IsNullOrWhiteSpace(t.Text) && t.Opacity == 1 && t.Foreground is SolidColorBrush && !Object.ReferenceEquals(t.Foreground, UI.Brush("Canvas"))).ToList();
+        Assert(lines.Any(t => t.Text == "Theme test quest") && lines.Any(t => t.Text == "A brief quest description") && lines.Any(t => t.Text == "Collect the reward"), theme + " shows quest, description, and subtask text");
+        Assert(window.Opacity == 1 && lines.All(t => t.Opacity == 1 && t.Effect is DropShadowEffect && t.Background is SolidColorBrush &&
+            Contrast(((SolidColorBrush)t.Foreground).Color, Blend(((SolidColorBrush)t.Background).Color, 0, ((SolidColorBrush)t.Background).Opacity)) >= 4.5 &&
+            Contrast(((SolidColorBrush)t.Foreground).Color, Blend(((SolidColorBrush)t.Background).Color, 255, ((SolidColorBrush)t.Background).Opacity)) >= 4.5),
+            theme + " keeps text readable over dark and light scenes at 20% background visibility");
+    }
     static void Reject(string json, string message)
     {
         try { ThemeManager.Parse(Encoding.UTF8.GetBytes(json)); throw new Exception("Accepted invalid theme: " + message); }
@@ -69,7 +95,7 @@ class ThemeTests
             manager.Install(args[0]); manager.Install(args[1]); foreach (var path in args.Skip(4)) manager.Install(path);
             Assert(manager.Installed().Count == 9 && manager.Find("neon-aviary").Name == "Neon Aviary", "All nine optional theme files install locally and can be found by ID");
             Assert(manager.Find("not-installed").Id == ThemeManager.DefaultId, "Missing optional theme falls back to Default");
-            var journal = new Journal(); journal.SaveGame(new Game { Name = "Theme test quest" }, DateTime.Now, DateTime.UtcNow);
+            var journal = new Journal(); journal.SaveGame(new Game { Name = "Theme test quest", Description = "A brief quest description", Lines = new List<QuestLine> { new QuestLine { Text = "Collect the reward", Checkable = true } } }, DateTime.Now, DateTime.UtcNow);
             var window = new QuestWindow(storage, journal) { Opacity = 0, ShowActivated = false }; window.Show();
             Assert(window.WindowStyle == WindowStyle.None && window.AllowsTransparency && Walk(window).OfType<Thumb>().Count() == 8 && Walk(window).OfType<Button>().Any(b => AutomationProperties.GetName(b) == "Close WrenFeed"), "Custom quest-log title bar keeps close and edge-resize controls");
             double previousWidth = window.Width;
@@ -95,13 +121,14 @@ class ThemeTests
                     Assert(Walk(window).OfType<Border>().Any(b => b.Background is SolidColorBrush && ((SolidColorBrush)b.Background).Color == ThemeManager.Current.Colors["Panel"] && Math.Abs(((SolidColorBrush)b.Background).Opacity - Math.Pow(0.8, 8)) < 0.001), "Quest-card tint no longer stacks heavily over the translucent window");
                     opacity.Value = 20;
                     Assert(Math.Abs(journal.Settings.WindowOpacity - 0.2) < 0.001 && Walk(window).OfType<Border>().Any(b => b.Background is SolidColorBrush && ((SolidColorBrush)b.Background).Color == ThemeManager.Current.Colors["Canvas"] && Math.Abs(((SolidColorBrush)b.Background).Opacity - 0.2) < 0.001), "Background-only visibility reaches 20 percent");
+                    AssertReadableText(window, "Default");
                     opacity.Value = 100;
                     var list = Walk(dialog).OfType<ComboBox>().Single(c => AutomationProperties.GetName(c) == "Theme");
                     list.SelectedItem = list.Items.Cast<ComboBoxItem>().Single(i => ((ThemeSpec)i.Tag).Id == "adventurers-ledger");
                     Assert(journal.Settings.Theme == "adventurers-ledger" && ThemeManager.Current.Id == "adventurers-ledger", "Settings saves and applies selected theme immediately");
                     Assert(Walk(window).OfType<Canvas>().Any(c => (string)c.ToolTip == "A little wren keeping watch" && c.Visibility == Visibility.Visible), "Ledger shows the small wren in the app header");
                     opacity.Value = 20;
-                    Assert(Walk(window).OfType<TextBlock>().Any(t => t.Text == "Theme test quest" && t.Opacity == 1 && t.Effect is DropShadowEffect) && window.Opacity == 1, "Ledger quest text stays opaque with a contrast halo in background-only mode");
+                    AssertReadableText(window, "Adventurer's Ledger");
                     var leaderboardButton = Walk(dialog).OfType<Button>().Single(b => AutomationProperties.GetName(b) == "Leaderboard upload…");
                     app.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(delegate
                     {
@@ -114,6 +141,9 @@ class ThemeTests
                     Capture(window, Path.Combine(root, "ledger.png"));
                     list.SelectedItem = list.Items.Cast<ComboBoxItem>().Single(i => ((ThemeSpec)i.Tag).Id == "neon-aviary");
                     Capture(window, Path.Combine(root, "neon.png"));
+                    opacity.Value = 20;
+                    AssertReadableText(window, "Neon Aviary");
+                    opacity.Value = 100;
                     foreach (var theme in additions)
                     {
                         list.SelectedItem = list.Items.Cast<ComboBoxItem>().Single(i => ((ThemeSpec)i.Tag).Id == theme.Id);
@@ -123,9 +153,17 @@ class ThemeTests
                         if (theme.Id == "manga-sketch") Assert(((CornerRadius)app.Resources["ControlCornerRadius"]).TopLeft == 0 && Walk(window).OfType<Border>().Any(b => b.Background is DrawingBrush) && Walk(window).OfType<Canvas>().Any(c => c.ToolTip != null && c.ToolTip.ToString().Contains("hand-inked")), "Manga Sketch has paper texture and hand-inked wren");
                         if (theme.Id == "the-flock") Assert(Walk(window).OfType<Canvas>().Any(c => c.ToolTip != null && c.ToolTip.ToString().StartsWith("The flock:") && c.Children.OfType<Canvas>().Count() == 3), "Flock header contains the G wren, red wren, and sphynx together");
                         Capture(window, Path.Combine(root, theme.Id + ".png"));
+                        opacity.Value = 20;
+                        AssertReadableText(window, theme.Name);
+                        if (theme.Id == "manga-sketch") Capture(window, Path.Combine(root, "manga-sketch-faded.png"));
+                        opacity.Value = 100;
                     }
+                    opacity.Value = 20;
                     list.SelectedIndex = 0;
                     Assert(journal.Settings.Theme == ThemeManager.DefaultId && ThemeManager.Current.Id == ThemeManager.DefaultId, "Settings can restore Default without altering quests");
+                    AssertReadableText(window, "Restored Default");
+                    opacity.Value = 100;
+                    Assert(Walk(window).OfType<TextBlock>().Where(t => t.Text == "Theme test quest").All(t => t.Background == null && t.Effect == null), "Solid mode removes text backings and halos");
                     dialog.Close();
                 }
                 catch (Exception e) { failure = e; foreach (Window dialog in app.Windows.Cast<Window>().Where(w => w.Title == "WrenFeed · Settings").ToList()) dialog.Close(); }

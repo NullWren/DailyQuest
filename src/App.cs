@@ -46,7 +46,7 @@ namespace DailyQuest
         public static void Display(TextBlock text) { text.SetResourceReference(TextBlock.FontFamilyProperty, "DisplayFont"); }
         public static TextBlock Text(string text, double size, string color)
         {
-            return new TextBlock { Text = text, FontSize = size, Foreground = Brush(color), TextWrapping = TextWrapping.Wrap };
+            return new TextBlock { Text = text, FontSize = size, Foreground = Brush(color), TextWrapping = TextWrapping.Wrap, HorizontalAlignment = HorizontalAlignment.Left };
         }
         public static Button Button(string text, Action action)
         {
@@ -269,7 +269,7 @@ namespace DailyQuest
             DockPanel.SetDock(settings, Dock.Right); masthead.Children.Add(settings);
             DockPanel.SetDock(wrenBadge, Dock.Right); masthead.Children.Add(wrenBadge);
             brand.VerticalAlignment = VerticalAlignment.Center; masthead.Children.Add(brand); top.Children.Add(masthead);
-            headerOrnament.Margin = new Thickness(0, 7, 0, 0); headerOrnament.TextAlignment = TextAlignment.Center; top.Children.Add(headerOrnament);
+            headerOrnament.Margin = new Thickness(0, 7, 0, 0); headerOrnament.HorizontalAlignment = HorizontalAlignment.Stretch; headerOrnament.TextAlignment = TextAlignment.Center; top.Children.Add(headerOrnament);
             UI.Display(heading); heading.Margin = new Thickness(0, 17, 0, 6); top.Children.Add(heading);
             RefreshThemeChrome();
             summary.Margin = new Thickness(0, 0, 0, 12); top.Children.Add(summary);
@@ -387,18 +387,45 @@ namespace DailyQuest
                 foreach (var nested in Descendants<T>(element)) yield return nested;
             }
         }
+        static double Luminance(Color color)
+        {
+            double[] channels = { color.R / 255.0, color.G / 255.0, color.B / 255.0 };
+            for (int i = 0; i < channels.Length; i++) channels[i] = channels[i] <= 0.04045 ? channels[i] / 12.92 : Math.Pow((channels[i] + 0.055) / 1.055, 2.4);
+            return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+        }
+        static double Contrast(Color first, Color second)
+        {
+            double a = Luminance(first), b = Luminance(second);
+            return (Math.Max(a, b) + 0.05) / (Math.Min(a, b) + 0.05);
+        }
+        static Color Over(Color foreground, byte background, double opacity)
+        {
+            return Color.FromRgb((byte)Math.Round(foreground.R * opacity + background * (1 - opacity)),
+                (byte)Math.Round(foreground.G * opacity + background * (1 - opacity)),
+                (byte)Math.Round(foreground.B * opacity + background * (1 - opacity)));
+        }
+        static double TextBackingOpacity(Color ink, Color canvas)
+        {
+            // Keep small text legible even over an unknown bright or dark game scene.
+            for (double opacity = 0.95; opacity < 1.0; opacity += 0.01)
+                if (Contrast(ink, Over(canvas, 0, opacity)) >= 4.5 && Contrast(ink, Over(canvas, 255, opacity)) >= 4.5) return opacity;
+            return 1.0;
+        }
         void ApplyTextReadability()
         {
             if (Content == null) return;
             bool translucent = journal.Settings.BackgroundOnlyOpacity && journal.Settings.WindowOpacity < 1;
             foreach (var line in Descendants<TextBlock>((DependencyObject)Content))
             {
-                if (!translucent) { line.Effect = null; continue; }
+                if (!translucent) { line.Effect = null; line.Background = null; continue; }
                 var ink = line.Foreground as SolidColorBrush;
                 if (ink == null) continue;
+                // The mascot's reversed lettering already has its own solid badge.
+                if (Object.ReferenceEquals(ink, UI.Brush("Canvas"))) continue;
                 var color = ink.Color;
                 bool dark = 0.2126 * color.R + 0.7152 * color.G + 0.0722 * color.B < 128;
                 line.Effect = new DropShadowEffect { Color = dark ? Colors.White : Colors.Black, BlurRadius = 4, ShadowDepth = 0, Opacity = 0.95 };
+                line.Background = new SolidColorBrush(ThemeManager.Current.Colors["Canvas"]) { Opacity = TextBackingOpacity(color, ThemeManager.Current.Colors["Canvas"]) };
             }
         }
         bool RefreshDay()
@@ -472,15 +499,15 @@ namespace DailyQuest
             {
                 var empty = UI.Stack(); empty.Margin = new Thickness(10, 30, 10, 30);
                 var symbol = UI.Text("◇", 38, "Accent"); symbol.HorizontalAlignment = HorizontalAlignment.Center; empty.Children.Add(symbol);
-                var title = UI.Text(history ? "No quests recorded" : "Every adventure starts small", 18, "Ink"); UI.Display(title); title.TextAlignment = TextAlignment.Center; title.Margin = new Thickness(0, 14, 0, 10); empty.Children.Add(title);
-                var copy = UI.Text(history ? "There is no saved checklist for this date. Days when the app was closed are not marked as completed." : "Add a game and the little daily tasks worth coming back for.", 13, "Muted"); copy.TextAlignment = TextAlignment.Center; empty.Children.Add(copy);
+                var title = UI.Text(history ? "No quests recorded" : "Every adventure starts small", 18, "Ink"); UI.Display(title); title.HorizontalAlignment = HorizontalAlignment.Stretch; title.TextAlignment = TextAlignment.Center; title.Margin = new Thickness(0, 14, 0, 10); empty.Children.Add(title);
+                var copy = UI.Text(history ? "There is no saved checklist for this date. Days when the app was closed are not marked as completed." : "Add a game and the little daily tasks worth coming back for.", 13, "Muted"); copy.HorizontalAlignment = HorizontalAlignment.Stretch; copy.TextAlignment = TextAlignment.Center; empty.Children.Add(copy);
                 if (!history) { var add = UI.Button("+ Add your first game", delegate { EditGame(null); }); UI.Primary(add); add.Margin = new Thickness(0, 22, 0, 0); add.HorizontalAlignment = HorizontalAlignment.Center; empty.Children.Add(add); }
                 cards.Children.Add(QuestCard(empty));
             }
             RenderQuestGroups(entries, flash);
             if (!history && entries.Count > 0 && done == entries.Count)
             {
-                var finished = UI.Text("✦  Daily quests complete. Well played.", 12, "Success"); finished.Margin = new Thickness(0, 10, 0, 8); finished.TextAlignment = TextAlignment.Center; cards.Children.Add(finished);
+                var finished = UI.Text("✦  Daily quests complete. Well played.", 12, "Success"); finished.HorizontalAlignment = HorizontalAlignment.Stretch; finished.Margin = new Thickness(0, 10, 0, 8); finished.TextAlignment = TextAlignment.Center; cards.Children.Add(finished);
             }
             ApplyTextReadability();
         }
@@ -497,8 +524,8 @@ namespace DailyQuest
             if (entries.Count == 0)
             {
                 var empty = UI.Stack(); empty.Margin = new Thickness(10, 30, 10, 30);
-                var title = UI.Text("A new weekly adventure", 18, "Ink"); UI.Display(title); title.TextAlignment = TextAlignment.Center; empty.Children.Add(title);
-                var copy = UI.Text("Add a weekly game and choose when its quest resets.", 13, "Muted"); copy.Margin = new Thickness(0, 10, 0, 16); copy.TextAlignment = TextAlignment.Center; empty.Children.Add(copy);
+                var title = UI.Text("A new weekly adventure", 18, "Ink"); UI.Display(title); title.HorizontalAlignment = HorizontalAlignment.Stretch; title.TextAlignment = TextAlignment.Center; empty.Children.Add(title);
+                var copy = UI.Text("Add a weekly game and choose when its quest resets.", 13, "Muted"); copy.HorizontalAlignment = HorizontalAlignment.Stretch; copy.Margin = new Thickness(0, 10, 0, 16); copy.TextAlignment = TextAlignment.Center; empty.Children.Add(copy);
                 var add = UI.Button("+ Add a weekly game", delegate { EditGame(null); }); UI.Primary(add); add.HorizontalAlignment = HorizontalAlignment.Center; empty.Children.Add(add);
                 cards.Children.Add(QuestCard(empty));
             }
